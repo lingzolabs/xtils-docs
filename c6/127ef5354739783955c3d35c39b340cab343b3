@@ -1,0 +1,19 @@
+README.md
+  s_813f835b141a18::t_ad05b17bb9f87a 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "c6127ef5354739783955c3d35c39b340cab343b3",
+  "prompts": {},
+  "sessions": {
+    "s_813f835b141a18": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e61f4-09ef-7b32-a7fa-8be38fbf4400",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Albert Lv <altair.albert@gmail.com>"
+    }
+  }
+}
