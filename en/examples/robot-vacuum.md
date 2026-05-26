@@ -788,4 +788,4 @@ cmake --build build
 
 ## Source Code
 
-The complete source code is available at [`xtils_app`](https://github.com/lingzo/xtils) in the application examples.
+The complete source code is available at [`xtils_app`](https://github.com/lingzolabs/xtils) in the application examples.

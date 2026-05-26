@@ -740,4 +740,4 @@ cmake --build build
 
 ## 源代码
 
-完整源代码可在 [`xtils_app`](https://github.com/lingzo/xtils) 的应用示例中找到。
+完整源代码可在 [`xtils_app`](https://github.com/lingzolabs/xtils) 的应用示例中找到。

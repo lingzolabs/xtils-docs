@@ -12,7 +12,7 @@
 ### 克隆仓库
 
 ```bash
-git clone https://github.com/lingzo/xtils.git
+git clone https://github.com/lingzolabs/xtils.git
 cd xtils
 ```
 
@@ -83,7 +83,7 @@ target_link_libraries(my_app xtils::xtils)
 ```cmake
 include(FetchContent)
 FetchContent_Declare(xtils
-  GIT_REPOSITORY https://github.com/lingzo/xtils.git
+  GIT_REPOSITORY https://github.com/lingzolabs/xtils.git
   GIT_TAG master
 )
 FetchContent_MakeAvailable(xtils)

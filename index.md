@@ -10,7 +10,7 @@ hero:
       link: /zh/guide/getting-started
     - theme: alt
       text: GitHub
-      link: https://github.com/lingzo/xtils
+      link: https://github.com/lingzolabs/xtils
 features:
   - icon: 🏗️
     title: 应用框架

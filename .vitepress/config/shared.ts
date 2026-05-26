@@ -10,7 +10,7 @@ export const shared = defineConfig({
   ],
   themeConfig: {
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/lingzo/xtils' }
+      { icon: 'github', link: 'https://github.com/lingzolabs/xtils' }
     ],
     search: {
       provider: 'local',

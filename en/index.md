@@ -10,7 +10,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/lingzo/xtils
+      link: https://github.com/lingzolabs/xtils
 features:
   - icon: 🏗️
     title: App Framework
