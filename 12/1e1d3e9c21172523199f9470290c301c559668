@@ -1,0 +1,21 @@
+changelog.md
+  s_953cdf29321987::t_3c939456d07d97 3-108
+index.md
+  s_953cdf29321987::t_6d6c55ca9a40b4 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "121e1d3e9c21172523199f9470290c301c559668",
+  "prompts": {},
+  "sessions": {
+    "s_953cdf29321987": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e67ae-08c3-731e-94f8-7505b029f332",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Albert Lv <altair.albert@gmail.com>"
+    }
+  }
+}
