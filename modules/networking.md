@@ -210,6 +210,40 @@ ws.SetPingInterval(30000);         // 每 30 秒发送 ping
 ws.Connect("wss://api.example.com/ws");
 ```
 
+## HTTP Server 配置
+
+通过 `HttpServerConfig` 结构体可配置 HTTP 服务器参数：
+
+```cpp
+#include "xtils/net/http_server.h"
+
+struct HttpServerConfig {
+  // 最大 HTTP 请求体大小。超过此限制的连接将收到 413 Payload Too Large 响应。
+  size_t max_payload_size = 4 * 1024 * 1024;  // 默认 4 MB
+};
+```
+
+### 用法
+
+```cpp
+// 使用默认配置（4MB 限制）
+HttpServer server(&runner, &handler);
+
+// 自定义最大请求体大小（如嵌入式设备上限制为 1MB）
+HttpServerConfig config;
+config.max_payload_size = 1 * 1024 * 1024;  // 1 MB
+HttpServer server(&runner, &handler, config);
+
+// 或允许更大的上传（如文件上传服务）
+HttpServerConfig config;
+config.max_payload_size = 64 * 1024 * 1024;  // 64 MB
+HttpServer server(&runner, &handler, config);
+```
+
+::: tip
+在内存受限的环境中（如 RAM < 30MB 的嵌入式设备），建议显式设置 `max_payload_size` 以避免 OOM。
+:::
+
 ## Multipart 解析
 
 处理文件上传和表单数据：

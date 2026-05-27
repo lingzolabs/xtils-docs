@@ -1,88 +1,108 @@
 # 更新日志
 
-所有 xtils 的重要变更都记录在此（逆序排列）。
+xtils 的版本记录与重要变更。
 
-格式：`type(scope): description` — 类型：feat, fix, refactor, chore, tidy。
+---
 
-## 未发布
+## 开发中（未发布）
 
-### 2025-05 — FSM 改进、Multipart 与 mbedTLS
+> 自 v1.1.0 以来的所有变更，预计作为 v2.0.0 发布。
 
-- **fix(app)**: `Service::Deinit()` 现在在停止基础设施之前调用 — 服务可以在 `Deinit()` 中安全执行网络清理（如 WebSocket 关闭握手）
-- **feat(fsm)**: 丰富 `HistoryEntry`，增加人可读名称（`from_name`, `to_name`, `event_name`）+ `DumpHistory()` 格式化输出
-- **fix(fsm)**: 解决线程安全问题 — `recursive_mutex`、`GetHistory()` 按值返回、增加 `SetRecordFailedEvents(bool)`
-- **refactor(fsm)**: 优化 FSM — `RegisterEvent`/`GetEventName` API、基于 deque 的历史记录、改进 `ToDotGraph`、废弃包装器移至 `fsm_compat.h`
-- **fix(bt)**: Retry 装饰器现在正确传播 Running 状态而不消耗尝试次数
-- **feat(net)**: 增加 `MultipartParser` 解析 multipart/form-data 请求体 + `HttpRequestContext` 上的延迟 `GetMultipartFields()`/`GetMultipartFiles()`
-- **feat(net)**: 增加 `HttpServerConnection::SendFileStreaming()` 用于分块文件传输
-- **feat(net)**: 增加 mbedTLS transport 后端，通过 `TLS_BACKEND` cmake 选项选择
+### 亮点
 
-### 2025-05（早期）— 代码质量与类型特征
+这是一次重大更新。行为树引擎从零实现，FSM 进行了线程安全重构，网络层新增 TLS 和 multipart 支持，所有公共 API 统一为 PascalCase 命名。
 
-- **fix(type_traits)**: 增加 `type_name_cstr` 用于 printf 安全使用
-- **feat(bt)**: 增加结构化 `BtLogger` 用于离线和在线分析（CompositeLogger, FileLogger, InspectLogger）
-- **fix**: 解决代码质量审查中的发现
-- **refactor**: 全面代码质量改造 — 所有模块使用 PascalCase API、snake_case 遗留 API 添加 `[[deprecated]]` 包装器、扩展测试覆盖
+### 行为树引擎 <Badge type="tip" text="新模块" />
 
-### 2025-04 — 行为树事件与子树
+JSON 驱动的行为树系统，适用于机器人、游戏 AI 和工作流自动化：
 
-- **feat(bt)**: 从 JSON 目录加载树（`LoadTreesFromDirectory`）
-- **feat(bt)**: 增加事件驱动的子树控制（`SubTree`, `WaitForEvent`, `EventGuard` 节点）
-- **feat(bt)**: 增加树事件系统（`sendEvent`, `consumeEvent`, `peekEvent`）
-- **feat(bt)**: 增加 BtTree 的暂停/恢复支持
+- 核心引擎：Sequence、Selector、Inverter、Delay、Retry 等内置节点
+- 黑板数据共享（`AnyMap`）和输入/输出端口
+- `BtFactory` 支持从 JSON 文件或目录批量加载树
+- 子树组合（`SubTree` 节点 + `tree_name` 端口）
+- 事件系统（`sendEvent`/`consumeEvent`/`WaitForEvent`/`EventGuard`）
+- 暂停/恢复支持
+- 结构化日志（`BtFileLogger`、`BtInspectLogger`、`BtCompositeLogger`）
 
-### 2025-03 — API 命名与 HTTP 改进
+### 网络层增强
 
-- **refactor(app)**: 重命名 `PostTask`/`PostAsyncTask` 为 `Spawn`/`SpawnAsync`
-- **feat(http)**: 更新 HttpClient API（统一同步/异步接口）
-- **fix(http)**: POST form/multipart 文件处理
-- **fix(http)**: chunked transfer encoding 错误
-- **chore**: 更新内部 TCP API 以适配 Transport 抽象
+- **TLS 支持**：新增 mbedTLS 后端，通过 `TLS_BACKEND` CMake 选项选择（`openssl` 或 `mbedtls`）
+- **WSS 客户端**：WebSocket 客户端支持 TLS 安全连接
+- **HTTP Client TLS**：通过 Transport 抽象层支持 HTTPS
+- **Multipart 解析**：新增 `MultipartParser`，`HttpRequestContext` 支持延迟解析 `GetMultipartFields()`/`GetMultipartFiles()`
+- **文件流式响应**：`HttpServerConnection::SendFileStreaming()` 分块传输大文件
+- **请求体大小限制** `c5a61d2`：新增 `HttpServerConfig`，`max_payload_size` 可配置（默认 4MB），适配内存受限环境
 
-### 2025-02 — TLS 与 WebSocket
+### FSM 重构
 
-- **feat(net)**: 支持 WSS（WebSocket Secure）客户端
-- **feat(net)**: HttpClient 支持 TLS（通过 Transport 层）
-- **tidy**: 添加向后兼容的 API 包装器
+- 全面优化内部实现，历史记录改用 deque
+- `HistoryEntry` 增加人可读字段（`from_name`/`to_name`/`event_name`）
+- 新增 `DumpHistory()` 格式化输出、`RegisterEvent()`/`GetEventName()` API
+- 线程安全修复：`recursive_mutex`、`GetHistory()` 按值返回
+- 新增 `SetRecordFailedEvents(bool)` 控制是否记录未匹配事件
+- `ToDotGraph()` 输出改进
+- 废弃 API 移至 `fsm_compat.h`
 
-### 2025-01 — 行为树基础
+### App 框架
 
-- **feat(bt)**: 树文件格式中增加树名称
-- **feat(json)**: `dump(0)` 保持单行格式
-- **feat(bt)**: 增加 `BtLogger` 接口和实现
-- **feat(bt)**: 更新树 JSON 格式
-- **feat(http)**: 支持 `multipart/form-data` 和大文件上传
-- **fix(http)**: HTTP 客户端重定向处理
-- **feat(bt)**: 更新节点接口（OnTick/OnStart/OnStop）
-- **feat(bt)**: 增加常用节点（Sequence, Selector, Inverter, Delay 等）
-- **feat(bt)**: 增加 Blackboard（`AnyMap`）
-- **feat(bt)**: 使用 `AnyData` 替代 `std::any`
-- **feat(bt)**: 增加 `dump()` / `dumpTree()` 树可视化
-- **feat(app)**: 更新 service API
-- **feat(bt)**: 增加节点输入/输出端口
-- **feat(bt)**: 初始行为树实现，含 `BtFactory` JSON 构建器
+- `PostTask`/`PostAsyncTask` 重命名为 `Spawn`/`SpawnAsync`
+- `Service::Deinit()` 现在在基础设施关闭**之前**调用（服务可在清理阶段安全使用网络/定时器）
 
-### 2024 — 基础建设
+### 代码质量
 
-- **feat(tasks)**: 增加 `EventManager` 类型化/枚举事件分发
-- **feat**: 增加 `BUILD_WITH_SANITIZERS` CMake 选项
-- **feat(json)**: 自定义 JSON 实现（替代 nlohmann_json）
-- **tidy**: 导出 `cxx_std_17` 编译特性给消费者
-- **feat(tasks)**: 更新 `TaskGroup` API
-- **feat(logging)**: 退出时刷新日志
-- **feat(net)**: 增加 WebSocket 客户端
-- **feat(tasks)**: 增加 `CronScheduler`
-- **feat(net)**: 增加 HttpClient, TcpServer, TcpClient, UdpServer, UdpClient
-- **feat(fsm)**: 增强调试（历史记录、Graphviz 导出）
-- **feat(debug)**: Tracer 使用 `forward_list` 减少内存使用
+- 所有公共 API 统一为 PascalCase，旧 snake_case 通过 `[[deprecated]]` 保持兼容
+- 全面扩展测试覆盖
+- 新增 `type_name_cstr` 用于 printf 安全场景
 
-## 破坏性变更摘要
+### 破坏性变更
 
-| 时间 | 变更 | 迁移方式 |
-|------|------|---------|
-| 2025-05 | `USE_OPENSSL`/`USE_MBEDTLS` → `TLS_BACKEND` | 使用 `TLS_BACKEND=openssl` 或 `TLS_BACKEND=mbedtls` |
-| 2025-05 | `FSM::GetHistory()` 按值返回 | 更新持有 const 引用的代码 |
-| 2025-05 | 所有公共 API 重命名为 PascalCase | 使用新名称；旧 snake_case 仍有效但发出废弃警告 |
-| 2025-03 | `PostTask`/`PostAsyncTask` → `Spawn`/`SpawnAsync` | 使用新名称 |
-| 2025-01 | BT 节点接口变更为 `OnTick`/`OnStart`/`OnStop` | 覆写新虚方法 |
-| 2024 | 自定义 JSON 替代 nlohmann_json | 使用 `xtils::Json` API |
+| 变更 | 迁移方式 |
+|------|---------|
+| `USE_OPENSSL`/`USE_MBEDTLS` → `TLS_BACKEND` | 使用 `-DTLS_BACKEND=openssl` 或 `mbedtls` |
+| `FSM::GetHistory()` 按值返回 | 不再持有 const 引用 |
+| 公共 API 重命名为 PascalCase | 旧名称仍可用但有编译警告 |
+| `PostTask`/`PostAsyncTask` → `Spawn`/`SpawnAsync` | 使用新名称 |
+| BT 节点接口为 `OnTick`/`OnStart`/`OnStop` | 覆写新虚方法 |
+
+---
+
+## v1.1.0 <Badge type="info" text="2025-10-16" />
+
+首个正式 tag。包含从项目创建以来的全部基础模块。
+
+### 模块概览
+
+| 模块 | 状态 |
+|------|------|
+| App 框架 | ✅ 服务生命周期、事件、定时器 |
+| Config | ✅ JSON 配置 + CLI 解析 |
+| Logging | ✅ 异步日志、控制台/文件 Sink、看门狗 |
+| Net | ✅ TCP/UDP Client/Server、HTTP Client/Server、WebSocket Client |
+| FSM | ✅ 状态机 + 历史记录 + Graphviz 导出 |
+| Tasks | ✅ 事件循环、线程池、TaskGroup、Timer、CronScheduler |
+| Debug | ✅ Inspect HTTP/WS 调试服务器、Chrome Tracer |
+| Utils | ✅ JSON、字符串、文件、Base64、SHA1、字节读写 |
+
+### 主要特性
+
+- **App 框架**：单例应用上下文，Service CRTP 基类，自动配置段注入
+- **事件循环**：基于 epoll 的 `UnixTaskRunner`，`ThreadTaskRunner` 专用线程封装
+- **网络**：完整的 TCP/UDP/HTTP/WebSocket 栈，Express 风格路由器，CORS，中间件
+- **日志**：printf 风格宏，异步环形缓冲区，按大小滚转的文件输出，内存/CPU 看门狗
+- **FSM**：命名状态、事件转换、守卫条件、历史记录、DOT 图导出
+- **CronScheduler**：Cron 表达式 + 间隔任务调度
+- **自定义 JSON**：零依赖实现，替代 nlohmann_json
+- **Inspect**：运行时 HTTP/WebSocket 调试服务器，可编译时完全剥离
+- **Tracer**：Chrome trace 格式性能分析，RAII 宏
+- **构建**：CMake 单静态库，自动导出 C++17，GitHub Actions CI
+
+---
+
+## 项目早期（2025-06 ~ 2025-09）
+
+项目初始阶段，逐步搭建核心模块：
+
+- 2025-06：HTTP/WebSocket 服务器原型、JSON 实现、Config 类
+- 2025-07：Inspect 调试服务器、Tracer、WeakPtr、平台抽象
+- 2025-08：文件工具、字节读写器、Service 框架
+- 2025-09：FSM 调试增强、HTTP/TCP/UDP 完整实现
