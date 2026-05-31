@@ -26,8 +26,8 @@ config.Define<std::string>("database.url", "数据库连接字符串", "", true)
 config.ParseArgs(argc, argv);  // 自动处理 --config-file
 
 // 3. 访问
-auto host = config.GetString("server.host").value_or("0.0.0.0");
-auto port = config.GetInt("server.port").value_or(8080);
+auto host = config.GetOr<std::string>("server.host", "0.0.0.0");
+auto port = config.GetOr<int64_t>("server.port", 8080);
 ```
 
 ## 头文件
@@ -159,8 +159,8 @@ class ApiService : public Service<ApiService> {
 
   void Init() override {
     // `config` 已预填充 "api" 段
-    auto port = config.GetInt("port").value_or(8080);
-    auto cors = config.GetString("cors_origin").value_or("*");
+    auto port = config.GetOr<int64_t>("port", 8080);
+    auto cors = config.GetOr<std::string>("cors_origin", "*");
   }
 };
 ```
@@ -193,8 +193,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  auto host = config.GetString("server.host").value_or("0.0.0.0");
-  auto port = config.GetInt("server.port").value_or(8080);
+  auto host = config.GetOr<std::string>("server.host", "0.0.0.0");
+  auto port = config.GetOr<int64_t>("server.port", 8080);
   LogI("在 %s:%lld 上启动服务器", host.c_str(), port);
 
   config.Set("server.started_at", Json(time(nullptr)));

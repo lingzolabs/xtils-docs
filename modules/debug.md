@@ -219,23 +219,25 @@ class DebugService : public Service<DebugService> {
   DebugService() : Service("debug") {}
 
   void Init() override {
-    auto port = config.GetInt("inspect_port").value_or(9090);
+    auto port = config.GetOr<int>("inspect_port", 9090);
     Inspect::Get().Init("0.0.0.0", port);
 
-    INSPECT_ROUTE("/system/info", "系统信息", [](const auto&) {
+    INSPECT_ROUTE("/system/info", "系统信息",
+        [](const Inspect::Request& req, Inspect::Response& resp) {
       Json info;
       info["version"] = "1.0.0";
       info["uptime"] = GetUptime();
       info["pid"] = getpid();
-      return Inspect::Json(info);
+      resp = Inspect::Json(info);
     });
 
-    INSPECT_ROUTE("/trace/save", "保存追踪数据", [](const auto&) {
+    INSPECT_ROUTE("/trace/save", "保存追踪数据",
+        [](const Inspect::Request& req, Inspect::Response& resp) {
       TRACE_SAVE("runtime_trace.json");
-      return Inspect::Success("追踪已保存");
+      resp = Inspect::Success("追踪已保存");
     });
 
-    LogI("[Debug] Inspect 服务器在端口 %d", (int)port);
+    LogI("[Debug] Inspect 服务器在端口 %d", port);
   }
 
   void Deinit() override {

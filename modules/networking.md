@@ -304,11 +304,11 @@ class WebService : public Service<WebService> {
       res.Status(200).Json(status.dump());
     });
 
-    router_->Static("/", config.GetString("web_root").value_or("./public"));
+    router_->Static("/", config.GetOr<std::string>("web_root", "./public"));
     router_->EnableCors("*", "GET,POST,OPTIONS");
 
     server_ = std::make_unique<HttpServer>(runner_.get(), router_.get());
-    server_->Start("0.0.0.0", config.GetInt("port").value_or(8080));
+    server_->Start("0.0.0.0", config.GetOr<int>("port", 8080));
   }
 
   void Deinit() override {

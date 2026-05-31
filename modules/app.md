@@ -20,8 +20,8 @@ class NetworkService : public xtils::Service<NetworkService> {
 
   void Init() override {
     // 基础设施已就绪 — 事件循环、线程池、配置均可用
-    auto port = config.GetInt("port").value_or(8080);
-    LogI("在端口 %d 上启动", (int)port);
+    auto port = config.GetOr<int>("port", 8080);
+    LogI("在端口 %d 上启动", port);
     
     // 使用定时器
     ctx->Every(5000, [this]() { SendHeartbeat(); });
@@ -205,8 +205,8 @@ class NetworkService : public Service<NetworkService> {
 
   void Init() override {
     // config 已预填充 "network" 段的内容
-    auto port = config.GetInt("port").value_or(8080);
-    auto host = config.GetString("host").value_or("0.0.0.0");
+    auto port = config.GetOr<int>("port", 8080);
+    auto host = config.GetOr<std::string>("host", "0.0.0.0");
   }
 };
 ```
@@ -227,7 +227,7 @@ class ApiService : public Service<ApiService> {
   ApiService() : Service("api") {}
 
   void Init() override {
-    auto port = config.GetInt("port").value_or(8080);
+    auto port = config.GetOr<int>("port", 8080);
 
     runner_ = ThreadTaskRunner::CreateAndStart("api_io");
     router_ = std::make_unique<HttpRouter>();
@@ -246,7 +246,7 @@ class ApiService : public Service<ApiService> {
     server_ = std::make_unique<HttpServer>(runner_.get(), handler_.get());
     server_->Start("0.0.0.0", port);
 
-    LogI("[API] 服务器已在端口 %d 启动", port);
+    LogI("[API] 服务器已在端口 %d 启动", (int)port);
   }
 
   void Deinit() override {
