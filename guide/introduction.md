@@ -57,6 +57,7 @@ xtils 以 C++17 为目标，在最大化兼容性的同时利用现代特性：
 | [日志](/modules/logging) | `xtils/logging/` | 异步日志器、滚动文件、系统看门狗 |
 | [网络](/modules/networking) | `xtils/net/` | TCP/UDP、HTTP、WebSocket、TLS、路由 |
 | [任务](/modules/tasks) | `xtils/tasks/` | 事件循环、线程池、任务组、定时器、Cron 调度 |
+| [系统](/modules/system) | `xtils/system/` | 信号处理、页面内存、EventFd、Unix Socket、平台抽象 |
 | [工具](/modules/utils) | `xtils/utils/` | JSON、字符串、文件 I/O、Base64、字节读写、RAII |
 | [调试](/modules/debug) | `xtils/debug/` | HTTP/WS 调试服务器、Chrome 追踪格式分析器 |
 

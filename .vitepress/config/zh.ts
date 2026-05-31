@@ -47,6 +47,7 @@ export const zh: LocaleSpecificConfig<DefaultTheme.Config> = {
         {
           text: '工具库',
           items: [
+            { text: '系统', link: '/modules/system' },
             { text: '通用工具', link: '/modules/utils' },
             { text: '调试工具', link: '/modules/debug' }
           ]

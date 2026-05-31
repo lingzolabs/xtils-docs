@@ -47,6 +47,7 @@ export const en: LocaleSpecificConfig<DefaultTheme.Config> = {
         {
           text: 'Utilities',
           items: [
+            { text: 'System', link: '/en/modules/system' },
             { text: 'Utils', link: '/en/modules/utils' },
             { text: 'Debug', link: '/en/modules/debug' }
           ]

@@ -51,6 +51,31 @@ static Inspect::Response Error(const std::string& message);
 static Inspect::Response Success(const std::string& message = "OK");
 ```
 
+### API 方法
+
+```cpp
+auto& inspect = Inspect::Get();
+
+// 查询路由
+bool exists = inspect.HasRoute("/debug/fsm");
+auto routes = inspect.GetRoutes();            // 返回已注册 HTTP 路由列表
+auto ws_routes = inspect.GetWebSocketRoutes(); // 返回已注册 WebSocket 路由列表
+
+// 取消注册路由
+inspect.Unregister("/debug/fsm");
+
+// 服务器状态
+bool running = inspect.IsRunning();
+auto info = inspect.GetServerInfo();  // 返回地址、端口等信息
+
+// 订阅者
+size_t count = inspect.GetSubscriberCount("/debug/metrics");
+
+// CORS 配置
+inspect.SetCORS("*");  // 允许所有来源
+inspect.SetCORS("http://localhost:3000");  // 限定来源
+```
+
 ### WebSocket 发布/订阅
 
 ```cpp
@@ -88,22 +113,34 @@ Inspect 内置双栏 Web 控制台（访问根路径即可打开）：
 
 无需额外配置，启动 Inspect 服务器后浏览器访问即可使用。
 
+> **注意**：Web 控制台的 HTML 源码维护在 `src/debug/inspect_page.html`，通过 `cmake/embed_file.cmake` 嵌入到二进制中。
+
 ### 宏（禁用时零开销）
 
 当定义 `INSPECT_DISABLE` 时，这些宏编译为空：
 
 ```cpp
-INSPECT_ROUTE("/debug/fsm", "FSM 状态",
-    [&](const Inspect::Request& req, Inspect::Response& resp) {
+// HTTP 路由 — req 和 resp 在 body 中可用
+INSPECT("/debug/fsm", "FSM 状态", {
   resp = Inspect::Json(fsm.ToJson());
 });
 
-INSPECT_WEBSOCKET("/debug/events", "实时事件",
-    [](const Inspect::Request& req, Inspect::Response& resp) {
+// WebSocket 端点
+INSPECT_WS("/debug/events", "实时事件", {
   resp = Inspect::Success();
 });
 
+// 暴露变量为 JSON {"value": expr}
+INSPECT_VAR("/debug/counter", counter.load());
+
+// 静态内容
+INSPECT_STATIC("/debug/dashboard", dashboard_html, "text/html");
+
+// 发布文本数据
 INSPECT_PUBLISH("/debug/events", event_json.dump());
+
+// 发布二进制数据
+INSPECT_PUBLISH_BIN("/debug/binary", binary_data);
 ```
 
 ### 用例：实时仪表板
@@ -114,10 +151,11 @@ class MonitorService : public Service<MonitorService> {
   MonitorService() : Service("monitor") {}
 
   void Init() override {
-    INSPECT_WEBSOCKET("/debug/live", "实时指标",
-        [](const Inspect::Request& req, Inspect::Response& resp) {
+    INSPECT_WS("/debug/live", "实时指标", {
       resp = Inspect::Success();
     });
+
+    INSPECT_VAR("/debug/connections", GetConnectionCount());
 
     ctx->Every(1000, [this]() {
       if (!Inspect::Get().HasSubscribers("/debug/live")) return;
@@ -198,7 +236,7 @@ TRACE_SAVE("game_trace.json");
 
 | 模块 | 禁用标志 | 效果 |
 |------|---------|------|
-| Inspect | `INSPECT_DISABLE=ON`（CMake） | 所有 `INSPECT_*` 宏变为空操作 |
+| Inspect | `INSPECT_DISABLE=ON`（CMake） | `INSPECT`、`INSPECT_WS`、`INSPECT_VAR`、`INSPECT_STATIC`、`INSPECT_PUBLISH`、`INSPECT_PUBLISH_BIN` 宏变为空操作 |
 | Tracer | 不定义 `ENABLE_TRACE_RECORDING` | 所有 `TRACE_*` 宏变为空操作 |
 
 这意味着你可以在代码中随处添加调试工具，在生产构建中完全零运行时开销。
@@ -222,8 +260,7 @@ class DebugService : public Service<DebugService> {
     auto port = config.GetOr<int>("inspect_port", 9090);
     Inspect::Get().Init("0.0.0.0", port);
 
-    INSPECT_ROUTE("/system/info", "系统信息",
-        [](const Inspect::Request& req, Inspect::Response& resp) {
+    INSPECT("/system/info", "系统信息", {
       Json info;
       info["version"] = "1.0.0";
       info["uptime"] = GetUptime();
@@ -231,8 +268,7 @@ class DebugService : public Service<DebugService> {
       resp = Inspect::Json(info);
     });
 
-    INSPECT_ROUTE("/trace/save", "保存追踪数据",
-        [](const Inspect::Request& req, Inspect::Response& resp) {
+    INSPECT("/trace/save", "保存追踪数据", {
       TRACE_SAVE("runtime_trace.json");
       resp = Inspect::Success("追踪已保存");
     });

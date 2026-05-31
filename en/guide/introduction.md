@@ -45,6 +45,7 @@ xtils targets C++17 to maximize compatibility while still leveraging modern feat
 | [Logging](/en/modules/logging) | `xtils/logging/` | Async logger with rotating file sinks and system watchdog |
 | [Networking](/en/modules/networking) | `xtils/net/` | TCP/UDP, HTTP client & server, WebSocket, TLS, routing |
 | [Tasks](/en/modules/tasks) | `xtils/tasks/` | Event loops, thread pools, task groups, timers, cron scheduler |
+| [System](/en/modules/system) | `xtils/system/` | Signal handling, paged memory, EventFd, Unix sockets, platform abstractions |
 | [Utils](/en/modules/utils) | `xtils/utils/` | JSON, string ops, file I/O, base64, byte reader/writer, RAII |
 | [Debug](/en/modules/debug) | `xtils/debug/` | HTTP/WS debug server (Inspect), Chrome trace format (Tracer) |
 

@@ -22,34 +22,23 @@ Inspect provides a built-in HTTP server for exposing internal state, metrics, an
 ```cpp
 auto& inspect = Inspect::Get();  // Singleton
 inspect.Init("127.0.0.1", 8080);
-
-// Later...
 inspect.Stop();
-bool running = inspect.IsRunning();
 ```
 
 ### Registering Routes
 
 ```cpp
-// Simple route
-inspect.Route("/debug/config", [](const auto& req) {
-  return Inspect::Json(app_config.ToJson());
-});
-
-// Route with description (shown in built-in index page)
-inspect.Route("/debug/stats", "Application statistics", [](const auto& req) {
+// Route with description (shown in built-in Web Console)
+inspect.Route("/debug/stats", "Application statistics",
+    [](const Inspect::Request& req, Inspect::Response& resp) {
   Json stats;
   stats["uptime_s"] = GetUptime();
   stats["requests"] = request_count;
-  stats["errors"] = error_count;
-  return Inspect::Json(stats);
+  resp = Inspect::Json(stats);
 });
 
 // Static content (e.g., embedded HTML dashboard)
 inspect.Static("/debug/dashboard", dashboard_html, "text/html");
-
-// Remove a route
-inspect.Unregister("/debug/old_route");
 ```
 
 ### Response Helpers
@@ -62,14 +51,40 @@ static Inspect::Response Error(const std::string& message);
 static Inspect::Response Success(const std::string& message = "OK");
 ```
 
+### API Methods
+
+```cpp
+auto& inspect = Inspect::Get();
+
+// Query routes
+bool exists = inspect.HasRoute("/debug/fsm");
+auto routes = inspect.GetRoutes();            // Returns registered HTTP route list
+auto ws_routes = inspect.GetWebSocketRoutes(); // Returns registered WebSocket route list
+
+// Unregister a route
+inspect.Unregister("/debug/fsm");
+
+// Server status
+bool running = inspect.IsRunning();
+auto info = inspect.GetServerInfo();  // Returns address, port, etc.
+
+// Subscribers
+size_t count = inspect.GetSubscriberCount("/debug/metrics");
+
+// CORS configuration
+inspect.SetCORS("*");  // Allow all origins
+inspect.SetCORS("http://localhost:3000");  // Restrict to specific origin
+```
+
 ### WebSocket Pub/Sub
 
 Register WebSocket endpoints and publish data to all subscribers:
 
 ```cpp
 // Register a WebSocket endpoint
-inspect.WebSocket("/debug/metrics", "Live metrics stream", [](const auto& req) {
-  return Inspect::Success();  // Accept connection
+inspect.WebSocket("/debug/metrics", "Live metrics stream",
+    [](const Inspect::Request& req, Inspect::Response& resp) {
+  resp = Inspect::Success();
 });
 
 // Publish to all connected WebSocket clients
@@ -78,42 +93,55 @@ metrics["cpu"] = cpu_percent;
 metrics["memory_mb"] = memory_mb;
 inspect.Publish("/debug/metrics", metrics);
 
-// Binary publish
-inspect.Publish("/debug/binary", binary_data, /*is_text=*/false);
-
 // Check if anyone is listening (avoid expensive serialization)
 if (inspect.HasSubscribers("/debug/metrics")) {
-  auto data = CollectDetailedMetrics();
-  inspect.Publish("/debug/metrics", data.dump());
+  inspect.Publish("/debug/metrics", CollectMetrics().dump());
+}
+
+// Get detailed publish results
+auto result = inspect.PublishWithResult("/debug/metrics", message);
+if (result.HasFailures()) {
+  LogW("Publish failed: %zu", result.failed_count);
 }
 ```
+
+### Web Console
+
+Inspect ships with a built-in two-panel Web Console (accessible at the root path):
+
+- **Left panel**: Registered routes list; click to send a request
+- **Right panel top**: HTTP panel — supports GET/POST, auto-formats JSON responses
+- **Right panel bottom**: WebSocket panel — live message stream, color-coded by direction/type
+
+No extra configuration needed — just start the Inspect server and visit it in a browser.
+
+> **Note**: The Web Console HTML source is maintained in `src/debug/inspect_page.html` and embedded into the binary via `cmake/embed_file.cmake`.
 
 ### Macros (Zero-Cost When Disabled)
 
 These macros compile to nothing when `INSPECT_DISABLE` is defined:
 
 ```cpp
-// Route registration
-INSPECT_ROUTE("/debug/fsm", "FSM state", [&](const auto& req) {
-  return Inspect::Json(fsm.ToJson());
+// HTTP route — req and resp are available in body
+INSPECT("/debug/fsm", "FSM state", {
+  resp = Inspect::Json(fsm.ToJson());
 });
 
-// WebSocket
-INSPECT_WEBSOCKET("/debug/events", "Live events", [](const auto& req) {
-  return Inspect::Success();
+// WebSocket endpoint
+INSPECT_WS("/debug/events", "Live events", {
+  resp = Inspect::Success();
 });
+
+// Expose a variable as JSON {"value": expr}
+INSPECT_VAR("/debug/counter", counter.load());
 
 // Static content
-INSPECT_STATIC("/debug/ui", ui_html, "text/html");
+INSPECT_STATIC("/debug/dashboard", dashboard_html, "text/html");
 
-// Convenience: serve a Json expression
-INSPECT_JSON("/debug/state", state.ToJson());
-
-// Convenience: serve a text expression
-INSPECT_TEXT("/debug/version", GetVersion());
-
-// Publish
+// Publish text data
 INSPECT_PUBLISH("/debug/events", event_json.dump());
+
+// Publish binary data
 INSPECT_PUBLISH_BIN("/debug/binary", binary_data);
 ```
 
@@ -125,23 +153,18 @@ class MonitorService : public Service<MonitorService> {
   MonitorService() : Service("monitor") {}
 
   void Init() override {
-    // Register debug endpoints
-    INSPECT_ROUTE("/debug/services", "Registered services", [this](const auto&) {
-      return Inspect::Json(GetServiceList());
+    INSPECT_WS("/debug/live", "Real-time metrics", {
+      resp = Inspect::Success();
     });
 
-    INSPECT_WEBSOCKET("/debug/live", "Real-time metrics", [](const auto&) {
-      return Inspect::Success();
-    });
+    INSPECT_VAR("/debug/connections", GetConnectionCount());
 
-    // Push metrics every second
     ctx->Every(1000, [this]() {
       if (!Inspect::Get().HasSubscribers("/debug/live")) return;
-      
+
       Json m;
       m["timestamp"] = SteadyTimer::GetCurrentTimestampMs();
       m["connections"] = GetConnectionCount();
-      m["throughput"] = GetThroughput();
       INSPECT_PUBLISH("/debug/live", m.dump());
     });
   }
@@ -172,17 +195,9 @@ Without `ENABLE_TRACE_RECORDING`, all trace macros compile to nothing.
 ### Macros
 
 ```cpp
-// Scoped event (RAII — records duration from creation to scope exit)
-TRACE_SCOPE("ProcessFrame")
-
-// Instant event (point-in-time marker)
-TRACE_INSTANT("FrameReady")
-
-// Get trace data as string pointer
-TRACE_DATA(string_ptr)
-
-// Save trace to file
-TRACE_SAVE("trace.json")
+TRACE_SCOPE("ProcessFrame")    // Scoped event (RAII)
+TRACE_INSTANT("FrameReady")   // Instant event
+TRACE_SAVE("trace.json")      // Save to file
 ```
 
 ### Example: Profiling a Frame Loop
@@ -196,29 +211,17 @@ void GameLoop() {
     TRACE_SCOPE("Frame");
 
     {
-      TRACE_SCOPE("Input");
-      ProcessInput();
-    }
-
-    {
       TRACE_SCOPE("Physics");
       UpdatePhysics();
-      TRACE_INSTANT("PhysicsComplete");
     }
 
     {
       TRACE_SCOPE("Render");
       RenderScene();
     }
-
-    {
-      TRACE_SCOPE("Network");
-      SyncState();
-    }
   }
 }
 
-// On shutdown
 TRACE_SAVE("game_trace.json");
 // Open in chrome://tracing or https://ui.perfetto.dev/
 ```
@@ -226,26 +229,16 @@ TRACE_SAVE("game_trace.json");
 ### Viewing Traces
 
 1. Run your application with trace recording enabled
-2. Call `TRACE_SAVE("output.json")` at the point you want to capture
+2. Call `TRACE_SAVE("output.json")`
 3. Open Chrome and navigate to `chrome://tracing`
 4. Click "Load" and select your trace file
 5. Or use [Perfetto UI](https://ui.perfetto.dev/) for a modern viewer
-
-The trace shows:
-- Duration of each scoped event as colored bars
-- Nesting (parent-child relationships)
-- Thread information
-- Instant markers as vertical lines
-
-::: tip
-The tracer uses `forward_list` internally to minimize memory overhead. It's suitable for always-on recording in production if you limit the trace window.
-:::
 
 ## Compile-Time Stripping
 
 | Module | Disable Flag | Effect |
 |--------|-------------|--------|
-| Inspect | `INSPECT_DISABLE=ON` (CMake) | All `INSPECT_*` macros become no-ops; Inspect class not compiled |
+| Inspect | `INSPECT_DISABLE=ON` (CMake) | `INSPECT`, `INSPECT_WS`, `INSPECT_VAR`, `INSPECT_STATIC`, `INSPECT_PUBLISH`, `INSPECT_PUBLISH_BIN` macros become no-ops |
 | Tracer | Don't define `ENABLE_TRACE_RECORDING` | All `TRACE_*` macros become no-ops |
 
 This means you can sprinkle debug instrumentation throughout your code and have zero runtime cost in production builds.
@@ -266,25 +259,23 @@ class DebugService : public Service<DebugService> {
   DebugService() : Service("debug") {}
 
   void Init() override {
-    auto port = config.GetInt("inspect_port").value_or(9090);
+    auto port = config.GetOr<int>("inspect_port", 9090);
     Inspect::Get().Init("0.0.0.0", port);
 
-    // System info endpoint
-    INSPECT_ROUTE("/system/info", "System information", [](const auto&) {
+    INSPECT("/system/info", "System information", {
       Json info;
       info["version"] = "1.0.0";
       info["uptime"] = GetUptime();
       info["pid"] = getpid();
-      return Inspect::Json(info);
+      resp = Inspect::Json(info);
     });
 
-    // Trace control
-    INSPECT_ROUTE("/trace/save", "Save trace data", [](const auto&) {
+    INSPECT("/trace/save", "Save trace data", {
       TRACE_SAVE("runtime_trace.json");
-      return Inspect::Success("Trace saved");
+      resp = Inspect::Success("Trace saved");
     });
 
-    LogI("[Debug] Inspect server on port %d", (int)port);
+    LogI("[Debug] Inspect server on port %d", port);
   }
 
   void Deinit() override {
