@@ -83,6 +83,28 @@ bool Has(const std::string& path) const;
 auto cert = config.GetString("server.tls.cert");  // → "/path/to/cert.pem"
 ```
 
+## 便捷访问：GetOr
+
+`GetOr<T>` 简化了"获取值或使用默认值"的常见模式：
+
+```cpp
+// 使用 Define() 时指定的默认值（若无值也无默认值则抛异常）
+int64_t port = config.GetOr<int64_t>("server.port");
+
+// 使用显式 fallback 值
+std::string host = config.GetOr<std::string>("server.host", "0.0.0.0");
+int workers = config.GetOr<int64_t>("workers", 4);
+```
+
+对比传统写法：
+```cpp
+// 旧写法
+auto port = config.GetInt("server.port").value_or(8080);
+
+// 新写法（更简洁，且 fallback 来自 Define 定义）
+auto port = config.GetOr<int64_t>("server.port");
+```
+
 ## 修改
 
 ```cpp
@@ -96,6 +118,7 @@ void Set(const std::string& path, const T& value);
 ```cpp
 bool Validate() const;                              // 检查是否所有必填项都存在
 std::vector<std::string> MissingRequired() const;   // 缺失的必填字段列表
+std::vector<std::string> NoParsed() const;          // 未被识别的 CLI 参数列表
 std::string Help() const;                           // 生成帮助文本
 ```
 
@@ -107,6 +130,10 @@ Json ToJson() const;
 bool Save(const std::string& filename) const;
 void Print() const;
 ```
+
+::: info 废弃接口
+旧版 API（如 `get_string`/`get_int` 等 snake_case 方法）已移至 `config_compat.h`，通过 `[[deprecated]]` 标注。建议迁移到新 API。
+:::
 
 ## 与 App 框架集成
 

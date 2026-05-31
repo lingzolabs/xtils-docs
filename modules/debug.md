@@ -28,12 +28,13 @@ inspect.Stop();
 ### 注册路由
 
 ```cpp
-// 带描述的路由（显示在内置索引页面中）
-inspect.Route("/debug/stats", "应用统计", [](const auto& req) {
+// 带描述的路由（显示在内置 Web 控制台中）
+inspect.Route("/debug/stats", "应用统计",
+    [](const Inspect::Request& req, Inspect::Response& resp) {
   Json stats;
   stats["uptime_s"] = GetUptime();
   stats["requests"] = request_count;
-  return Inspect::Json(stats);
+  resp = Inspect::Json(stats);
 });
 
 // 静态内容
@@ -54,8 +55,9 @@ static Inspect::Response Success(const std::string& message = "OK");
 
 ```cpp
 // 注册 WebSocket 端点
-inspect.WebSocket("/debug/metrics", "实时指标流", [](const auto& req) {
-  return Inspect::Success();
+inspect.WebSocket("/debug/metrics", "实时指标流",
+    [](const Inspect::Request& req, Inspect::Response& resp) {
+  resp = Inspect::Success();
 });
 
 // 向所有连接的客户端发布
@@ -68,19 +70,37 @@ inspect.Publish("/debug/metrics", metrics);
 if (inspect.HasSubscribers("/debug/metrics")) {
   inspect.Publish("/debug/metrics", CollectMetrics().dump());
 }
+
+// 获取详细发布结果
+auto result = inspect.PublishWithResult("/debug/metrics", message);
+if (result.HasFailures()) {
+  LogW("发布失败: %zu", result.failed_count);
+}
 ```
+
+### Web 控制台
+
+Inspect 内置双栏 Web 控制台（访问根路径即可打开）：
+
+- **左栏**：已注册的路由列表，点击即可发起请求
+- **右栏上方**：HTTP 面板 — 支持 GET/POST，自动 JSON 格式化响应
+- **右栏下方**：WebSocket 面板 — 实时消息流，颜色区分收发/系统/错误
+
+无需额外配置，启动 Inspect 服务器后浏览器访问即可使用。
 
 ### 宏（禁用时零开销）
 
 当定义 `INSPECT_DISABLE` 时，这些宏编译为空：
 
 ```cpp
-INSPECT_ROUTE("/debug/fsm", "FSM 状态", [&](const auto& req) {
-  return Inspect::Json(fsm.ToJson());
+INSPECT_ROUTE("/debug/fsm", "FSM 状态",
+    [&](const Inspect::Request& req, Inspect::Response& resp) {
+  resp = Inspect::Json(fsm.ToJson());
 });
 
-INSPECT_WEBSOCKET("/debug/events", "实时事件", [](const auto& req) {
-  return Inspect::Success();
+INSPECT_WEBSOCKET("/debug/events", "实时事件",
+    [](const Inspect::Request& req, Inspect::Response& resp) {
+  resp = Inspect::Success();
 });
 
 INSPECT_PUBLISH("/debug/events", event_json.dump());
@@ -94,13 +114,14 @@ class MonitorService : public Service<MonitorService> {
   MonitorService() : Service("monitor") {}
 
   void Init() override {
-    INSPECT_WEBSOCKET("/debug/live", "实时指标", [](const auto&) {
-      return Inspect::Success();
+    INSPECT_WEBSOCKET("/debug/live", "实时指标",
+        [](const Inspect::Request& req, Inspect::Response& resp) {
+      resp = Inspect::Success();
     });
 
     ctx->Every(1000, [this]() {
       if (!Inspect::Get().HasSubscribers("/debug/live")) return;
-      
+
       Json m;
       m["timestamp"] = SteadyTimer::GetCurrentTimestampMs();
       m["connections"] = GetConnectionCount();

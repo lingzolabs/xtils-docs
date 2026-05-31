@@ -10,7 +10,7 @@ xtils 的版本记录与重要变更。
 
 ### 亮点
 
-这是一次重大更新。行为树引擎从零实现，FSM 进行了线程安全重构，网络层新增 TLS 和 multipart 支持，所有公共 API 统一为 PascalCase 命名。
+这是一次重大更新。日志系统重写提升性能与可扩展性，Config 新增便捷 API，JSON 修复多项解析 bug 并引入零拷贝访问，Inspect 全新 Web 控制台。行为树引擎从零实现，FSM 进行了线程安全重构，网络层新增 TLS 和 multipart 支持，所有公共 API 统一为 PascalCase 命名。
 
 ### 行为树引擎 <Badge type="tip" text="新模块" />
 
@@ -48,6 +48,35 @@ JSON 驱动的行为树系统，适用于机器人、游戏 AI 和工作流自�
 - `PostTask`/`PostAsyncTask` 重命名为 `Spawn`/`SpawnAsync`
 - `Service::Deinit()` 现在在基础设施关闭**之前**调用（服务可在清理阶段安全使用网络/定时器）
 
+### 日志系统重写
+
+- 原子级别检查（移除 mutex 开销）
+- `LogEntry` 使用 `const char*` 存储字面量（零拷贝），原始 `timespec` 延迟格式化
+- 新增 `Formatter` 接口（`PlainFormatter`/`ColorFormatter`），每个 Sink 可独立格式化
+- `Sink::write` 简化为 `string_view`
+- `ConsoleSink` 缓存 `isatty()` 结果，颜色逻辑不再泄漏到文件 Sink
+- 断言宏重命名为 `XTILS_CHECK`/`XTILS_DCHECK`/`XTILS_FATAL`（可 opt-in 短名）
+
+### Config 改进
+
+- 新增 `GetOr<T>` 便捷方法（两种重载：使用 Define 默认值 / 显式 fallback）
+- 修复 9 个 bug（空参数崩溃、负数误判为 flag、bool 空值处理等）
+- 废弃接口移至 `config_compat.h`
+
+### JSON 修复与增强
+
+- 新增零拷贝 `find(key)`/`find(index)` 方法（比 `get()` 快 ~3.4x）
+- 修复 UTF-16 代理对解码（emoji/补充平面字符）
+- 修复浮点序列化精度（`%.17g` 保证 round-trip）
+- 修复 `operator[]`/`push_back` 类型安全（仅允许 null 提升为 object/array）
+
+### Inspect 重构
+
+- 实现从 ~880 行精简至 ~330 行
+- 新增内置双栏 Web 控制台（HTTP 面板 + WebSocket 面板）
+- Handler 签名变更为 `void(const Request&, Response&)`
+- 新增 `PublishWithResult`、`GetSubscriberCount`、`GetRoutes`、`HasRoute` API
+
 ### 代码质量
 
 - 所有公共 API 统一为 PascalCase，旧 snake_case 通过 `[[deprecated]]` 保持兼容
@@ -57,7 +86,10 @@ JSON 驱动的行为树系统，适用于机器人、游戏 AI 和工作流自�
 ### 破坏性变更
 
 | 变更 | 迁移方式 |
-|------|---------|
+|------|--------|
+| `CHECK`/`DCHECK`/`FATAL` → `XTILS_CHECK`/`XTILS_DCHECK`/`XTILS_FATAL` | 使用新名称，或 `#define XTILS_LOG_SHORT_MACROS` |
+| `Sink::write(buf, start, len)` → `write(string_view)` | 更新自定义 Sink 实现 |
+| Inspect Handler 签名变更 | 从 `[](req) { return Response; }` 改为 `[](req, resp) { resp = ...; }` |
 | `USE_OPENSSL`/`USE_MBEDTLS` → `TLS_BACKEND` | 使用 `-DTLS_BACKEND=openssl` 或 `mbedtls` |
 | `FSM::GetHistory()` 按值返回 | 不再持有 const 引用 |
 | 公共 API 重命名为 PascalCase | 旧名称仍可用但有编译警告 |

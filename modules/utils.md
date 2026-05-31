@@ -67,8 +67,15 @@ bool b = json.as_bool();
 int64_t i = json.as_integer();
 const std::string& s = json.as_string();
 
-// 安全访问（返回 std::optional）
-auto port = json.get("port");
+// 零拷贝快速访问（返回 const Json*，不存在则 nullptr）
+const Json* port = json.find("port");    // 比 get() 快 ~3.4x
+const Json* item = json.find(0);         // 按索引查找数组元素
+if (port && port->is_integer()) {
+  int64_t p = port->as_integer();
+}
+
+// 安全访问（返回 std::optional，有拷贝开销）
+auto port_opt = json.get("port");
 auto host = json.get_string("host");
 auto count = json.get_integer("count");
 
