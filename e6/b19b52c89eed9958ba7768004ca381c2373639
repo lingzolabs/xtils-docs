@@ -1,0 +1,25 @@
+modules/networking.md
+  s_953cdf29321987::t_ff4f7a121fe288 307,311
+modules/app.md
+  s_953cdf29321987::t_ce4ddd2f828085 23-24,208-209,230,249
+modules/debug.md
+  s_953cdf29321987::t_3bb8d419849254 222,225-226,231,234-235,237,240
+modules/config.md
+  s_953cdf29321987::t_6693100ee20b80 29-30,162-163,196-197
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "e6b19b52c89eed9958ba7768004ca381c2373639",
+  "prompts": {},
+  "sessions": {
+    "s_953cdf29321987": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e67ae-08c3-731e-94f8-7505b029f332",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Albert Lv <altair.albert@gmail.com>"
+    }
+  }
+}
