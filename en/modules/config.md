@@ -65,11 +65,41 @@ bool LoadFile(const std::string& filename);
 // From JSON object or string
 bool ParseJson(const Json& json);
 bool Parse(const std::string& json_content);
+
+// From environment variables (see below)
+size_t LoadEnv(const std::string& prefix);
 ```
 
 ::: tip
 `ParseArgs` automatically handles `--config-file <path>` — it loads the JSON file first, then applies CLI arguments as overrides.
 :::
+
+### Short flags (-x)
+
+Attach a single-character short alias to an already-defined option:
+
+```cpp
+config.Define("server.port", "Listen port", int64_t(8080));
+config.Short("server.port", "p");
+
+// Run: ./app -p 9000
+//   equivalent to --server.port 9000
+```
+
+`Short()` always targets the most recently defined option. It can be chained right after `Define()` for ergonomics.
+
+### Environment variables (LoadEnv)
+
+Import env vars matching `<PREFIX>_<KEY>`. Names are lowercased and `_` becomes `.`:
+
+```cpp
+// With env: XTILS_LOG_LEVEL=2  XTILS_SERVER_PORT=9000
+config.LoadEnv("XTILS");
+config.Get<int64_t>("log.level");     // → 2
+config.Get<int64_t>("server.port");   // → 9000
+```
+
+The return value is the number of vars actually imported. An empty `prefix` imports every env var (lowercased) — use sparingly.
 
 ### CLI Argument Format
 
@@ -139,6 +169,31 @@ Json ToJson() const;                    // Export as Json object
 bool Save(const std::string& filename) const;  // Write to file
 void Print() const;                     // Print to stdout
 ```
+
+## Hot reload (ConfigWatcher)
+
+`ConfigWatcher` (`xtils/config/config_watcher.h`) uses inotify to watch a config file. When the file is rewritten the config is reloaded and the callback fires on the watcher's `TaskRunner` thread. RAII — stops on destruction.
+
+```cpp
+#include "xtils/config/config_watcher.h"
+
+Config cfg;
+cfg.LoadFile("/etc/app.json");
+
+ConfigWatcher watcher(&cfg, &task_runner);
+watcher.Watch("/etc/app.json", [](Config& cfg) {
+  LogI("config reloaded; new log level: %lld",
+       cfg.GetInt("log.level").value_or(0));
+});
+
+// `watcher` Stop()s automatically when it goes out of scope.
+```
+
+A second call to `Watch()` replaces the previous watch.
+
+::: warning v2.0 breaking change
+The legacy `config_compat.h` was removed in v2.0.0; all snake_case wrappers (`get`/`load_file`/`parse`/`define`, ...) are gone. Use the PascalCase API.
+:::
 
 ## Integration with App Framework
 

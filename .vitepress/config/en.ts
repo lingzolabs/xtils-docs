@@ -27,7 +27,8 @@ export const en: LocaleSpecificConfig<DefaultTheme.Config> = {
           items: [
             { text: 'App Framework', link: '/en/modules/app' },
             { text: 'Config', link: '/en/modules/config' },
-            { text: 'Logging', link: '/en/modules/logging' }
+            { text: 'Logging', link: '/en/modules/logging' },
+            { text: 'Metrics', link: '/en/modules/metrics' }
           ]
         },
         {
@@ -41,6 +42,7 @@ export const en: LocaleSpecificConfig<DefaultTheme.Config> = {
           text: 'I/O & Concurrency',
           items: [
             { text: 'Networking', link: '/en/modules/networking' },
+            { text: 'IPC Channel', link: '/en/modules/ipc' },
             { text: 'Tasks & Scheduling', link: '/en/modules/tasks' }
           ]
         },
@@ -48,6 +50,7 @@ export const en: LocaleSpecificConfig<DefaultTheme.Config> = {
           text: 'Utilities',
           items: [
             { text: 'System', link: '/en/modules/system' },
+            { text: 'Scripting (QuickJS)', link: '/en/modules/scripting' },
             { text: 'Utils', link: '/en/modules/utils' },
             { text: 'Debug', link: '/en/modules/debug' }
           ]

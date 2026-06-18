@@ -38,15 +38,18 @@ xtils targets C++17 to maximize compatibility while still leveraging modern feat
 
 | Module | Header Prefix | What It Does |
 |--------|--------------|--------------|
-| [App](/en/modules/app) | `xtils/app/` | Application lifecycle, service registration, events, timers |
-| [Config](/en/modules/config) | `xtils/config/` | JSON-backed configuration with CLI parsing and dot-notation paths |
+| [App](/en/modules/app) | `xtils/app/` | Application lifecycle, service registration with topological dependencies, events, timers |
+| [Config](/en/modules/config) | `xtils/config/` | JSON config, CLI / env-var parsing, hot reload via `ConfigWatcher` |
 | [FSM](/en/modules/fsm) | `xtils/fsm/` | Finite state machines with guards, actions, history, Graphviz export |
-| [Behavior Tree](/en/modules/behavior-tree) | `xtils/fsm/` | JSON-driven behavior trees with blackboard, ports, subtrees |
-| [Logging](/en/modules/logging) | `xtils/logging/` | Async logger with rotating file sinks and system watchdog |
-| [Networking](/en/modules/networking) | `xtils/net/` | TCP/UDP, HTTP client & server, WebSocket, TLS, routing |
+| [Behavior Tree](/en/modules/behavior-tree) | `xtils/fsm/` | JSON-driven behavior trees with blackboard, ports, subtrees, events |
+| [Logging](/en/modules/logging) | `xtils/logging/` | Async logging, rotating file sink, watchdog, MDC + LogBuilder |
+| [Metrics](/en/modules/metrics) | `xtils/metrics/` | Counter / Gauge / Histogram with Prometheus exporter |
+| [Networking](/en/modules/networking) | `xtils/net/` | TCP/UDP, HTTP, HttpClientPool, WebSocket, TLS, routing |
+| [IPC](/en/modules/ipc) | `xtils/net/` | JSON-RPC 2.0 over Unix / abstract Unix / TCP |
 | [Tasks](/en/modules/tasks) | `xtils/tasks/` | Event loops, thread pools, task groups, timers, cron scheduler |
+| [Scripting](/en/modules/scripting) | `xtils/scripting/` | Embedded QuickJS-NG with `Json` interop (opt-in) |
 | [System](/en/modules/system) | `xtils/system/` | Signal handling, paged memory, EventFd, Unix sockets, platform abstractions |
-| [Utils](/en/modules/utils) | `xtils/utils/` | JSON, string ops, file I/O, base64, byte reader/writer, RAII |
+| [Utils](/en/modules/utils) | `xtils/utils/` | JSON, crypto, Result, strings, file I/O, RAII |
 | [Debug](/en/modules/debug) | `xtils/debug/` | HTTP/WS debug server (Inspect), Chrome trace format (Tracer) |
 
 ## Quick Example

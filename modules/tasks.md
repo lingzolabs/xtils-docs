@@ -14,12 +14,56 @@ xtils 中的所有异步工作都通过 `TaskRunner` 抽象进行。无论是套
 using Task = std::function<void()>;
 
 class TaskRunner {
+ public:
+  using DelayedTaskHandle = uint64_t;
+  static constexpr DelayedTaskHandle kInvalidDelayedTaskHandle = 0;
+
+  // 基础任务提交
   virtual void PostTask(Task task) = 0;
   virtual void PostDelayedTask(Task task, uint32_t delay_ms) = 0;
+
+  // 可取消的延迟任务。默认实现调用 PostDelayedTask 并返回
+  // kInvalidDelayedTaskHandle（表示不支持取消）。
+  virtual DelayedTaskHandle PostDelayedTaskWithHandle(Task task,
+                                                       uint32_t delay_ms);
+  virtual bool CancelDelayedTask(DelayedTaskHandle handle);
+
+  // 此 runner 的单调时钟；默认 std::steady_clock，测试中
+  // 可以 fake。
+  virtual std::chrono::steady_clock::time_point Now() const;
+
+  // 依 Now() 与 PostDelayedTask 实现。在给定的绝对时点运行任务。
+  void PostTaskAt(std::chrono::steady_clock::time_point at, Task task);
+
+  // I/O 与线程归属
   virtual void AddFileDescriptorWatch(PlatformHandle fd, Task callback) = 0;
   virtual void RemoveFileDescriptorWatch(PlatformHandle fd) = 0;
   virtual bool RunsTasksOnCurrentThread() const = 0;
 };
+```
+
+### 延迟任务取消
+
+```cpp
+auto h = runner.PostDelayedTaskWithHandle([]() {
+  LogI("这可能不会调。");
+}, 5000);
+
+// 条件变化，取消它
+if (runner.CancelDelayedTask(h)) {
+  LogI("任务被取消");
+}
+```
+
+`CancelDelayedTask` 返回 `true` 仅当任务**尚未启动**才删除成功；如果已启动或 handle 未知，返回 `false`。
+
+### 绝对时间调度
+
+```cpp
+auto deadline = runner.Now() + std::chrono::milliseconds(1500);
+runner.PostTaskAt(deadline, []() {
+  LogI("1500ms 后精确触发");
+});
 ```
 
 ## UnixTaskRunner — epoll/poll 事件循环

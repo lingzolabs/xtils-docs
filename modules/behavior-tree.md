@@ -170,11 +170,11 @@ auto keys = blackboard.keys();  // → vector<string>
 class BtTree {
  public:
   Status tick();
-  void reset();
-  void shutdown();
+  void   reset();
+  void   shutdown();
   AnyMap& blackboard();
   std::string dump();
-  Json dumpTree();
+  Json        dumpTree();
 
   // 暂停/恢复
   void pause();
@@ -183,15 +183,18 @@ class BtTree {
 
   // 事件系统
   void sendEvent(EventType type, const AnyData& data = {});
-  std::optional<BtEvent> consumeEvent(EventType type);
-  bool hasEvent(EventType type) const;
+  std::optional<BtEvent> peekEvent   (EventType type) const;  // 不消费
+  std::optional<BtEvent> consumeEvent(EventType type);        // 消费
+  bool hasEvent  (EventType type) const;
   void clearEvents();
 };
 ```
 
 ## 子树
 
-子树允许从较小的可复用树组合复杂行为：
+子树允许从较小的可复用树组合复杂行为，有两种使用方式：
+
+### 1. 引用已注册的树
 
 ```json
 {
@@ -206,21 +209,41 @@ class BtTree {
 }
 ```
 
-每个子树共享父树的黑板，实现树间数据流。
+需要事先通过 `factory.LoadTreeFile(...)` 或 `factory.LoadTreesFromDirectory(...)` 注册名为 `navigate` / `interact` 的子树。
+
+### 2. 内联子树
+
+直接在 `SubTree` 结点内嵌一棵树（未采用 `tree_name` 端口）：
+
+```json
+{
+  "type": "SubTree",
+  "tree": {
+    "name": "recovery",
+    "root": { "type": "Inverter", "child": { "type": "CheckBattery" } }
+  }
+}
+```
+
+所有 `SubTree` 节点会共享父树的黑板与 logger，实现树间数据流。
 
 ## BtLogger
 
-结构化日志，用于离线分析和实时调试：
+结构化日志，用于离线分析和实时调试。头文件拆分为三个：
 
 ```cpp
-#include "xtils/fsm/bt_logger.h"
+#include "xtils/fsm/bt_filelogger.h"      // BtFileLogger
+#include "xtils/fsm/bt_inspectlogger.h"   // BtInspectLogger
+#include "xtils/fsm/bt_compositelogger.h" // BtCompositeLogger
+```
 
-auto file_logger = std::make_shared<BtFileLogger>("bt_trace.log");
-auto inspect_logger = std::make_shared<BtInspectLogger>("/debug/bt");
+```cpp
+auto file    = std::make_shared<BtFileLogger>("bt_trace.log");
+auto inspect = std::make_shared<BtInspectLogger>("/debug/bt");
 
 auto logger = std::make_shared<BtCompositeLogger>();
-logger->Add(file_logger);
-logger->Add(inspect_logger);
+logger->Add(file);
+logger->Add(inspect);
 
 auto tree = factory.buildFromRegisteredTree("main", blackboard, logger);
 ```

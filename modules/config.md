@@ -52,16 +52,46 @@ Config& Define(const std::string& name, const std::string& description,
 ## 加载
 
 ```cpp
-bool ParseArgs(int argc, const char** argv, bool allow_exit = false);
-bool ParseArgs(const std::vector<std::string>& args, bool allow_exit = false);
-bool LoadFile(const std::string& filename);
-bool ParseJson(const Json& json);
-bool Parse(const std::string& json_content);
+bool   ParseArgs (int argc, const char** argv, bool allow_exit = false);
+bool   ParseArgs (const std::vector<std::string>& args, bool allow_exit = false);
+bool   LoadFile  (const std::string& filename);
+bool   ParseJson (const Json& json);
+bool   Parse     (const std::string& json_content);
+size_t LoadEnv   (const std::string& prefix);
 ```
 
 ::: tip
 `ParseArgs` 会自动处理 `--config-file <path>` — 先加载 JSON 文件，然后将 CLI 参数作为覆盖值应用。
 :::
+
+### 短选项（-x）
+
+通过 `Short(name, alias)` 给已定义的选项追加单字符短名，便于命令行使用：
+
+```cpp
+config.Define("server.port", "监听端口", int64_t(8080));
+config.Short("server.port", "p");
+
+// 启动: ./app -p 9000
+//   等价于 --server.port 9000
+```
+
+::: tip
+`Short` 总是作用于最近一次 `Define` 的选项；也可以在更便利的链式风格里直接接在 `Define` 后调用。
+:::
+
+### 环境变量加载（LoadEnv）
+
+把符合 `<PREFIX>_<KEY>` 模式的环境变量导入到 Config 中。变量名会被小写化，`_` 转为 `.`：
+
+```cpp
+// 假设环境: XTILS_LOG_LEVEL=2  XTILS_SERVER_PORT=9000
+config.LoadEnv("XTILS");
+config.Get<int64_t>("log.level");     // → 2
+config.Get<int64_t>("server.port");   // → 9000
+```
+
+返回值是实际匹配并解析成功的变量数。空 `prefix` 会导入全部环境变量（小写化），慎用。
 
 ## 访问（点分路径）
 
@@ -131,8 +161,29 @@ bool Save(const std::string& filename) const;
 void Print() const;
 ```
 
-::: info 废弃接口
-旧版 API（如 `get_string`/`get_int` 等 snake_case 方法）已移至 `config_compat.h`，通过 `[[deprecated]]` 标注。建议迁移到新 API。
+## 配置热加载（ConfigWatcher）
+
+`ConfigWatcher`（`xtils/config/config_watcher.h`）使用 inotify 监听文件变更，文件被改写时自动重新加载并触发回调。RAII 风格，析构时停止监听。
+
+```cpp
+#include "xtils/config/config_watcher.h"
+
+Config cfg;
+cfg.LoadFile("/etc/app.json");
+
+ConfigWatcher watcher(&cfg, &task_runner);
+watcher.Watch("/etc/app.json", [](Config& cfg) {
+  LogI("config reloaded; new log level: %lld",
+       cfg.GetInt("log.level").value_or(0));
+});
+
+// 离开作用域时自动 Stop
+```
+
+回调在 `task_runner` 所属线程上执行；`Watch` 重复调用会替换前一次监视。
+
+::: warning v2.0 破坏性变更
+旧版 `config_compat.h` 在 v2.0.0 已删除。所有 snake_case 包装（`get`/`load_file`/`parse`/`define` 等）一并移除，请改用 PascalCase API。
 :::
 
 ## 与 App 框架集成

@@ -28,8 +28,29 @@ using Task = std::function<void()>;
 
 class TaskRunner {
  public:
+  using DelayedTaskHandle = uint64_t;
+  static constexpr DelayedTaskHandle kInvalidDelayedTaskHandle = 0;
+
+  // Core posting
   virtual void PostTask(Task task) = 0;
   virtual void PostDelayedTask(Task task, uint32_t delay_ms) = 0;
+
+  // Cancellable delayed task. Default impl just delegates to
+  // PostDelayedTask and returns kInvalidDelayedTaskHandle (cancellation
+  // unsupported on that runner).
+  virtual DelayedTaskHandle PostDelayedTaskWithHandle(Task task,
+                                                       uint32_t delay_ms);
+  virtual bool CancelDelayedTask(DelayedTaskHandle handle);
+
+  // Steady-clock "now" for this runner. Default uses std::steady_clock;
+  // tests can override with a fake clock.
+  virtual std::chrono::steady_clock::time_point Now() const;
+
+  // Schedule task at an absolute steady-clock time. Implemented in terms
+  // of Now() + PostDelayedTask.
+  void PostTaskAt(std::chrono::steady_clock::time_point at, Task task);
+
+  // I/O and threading
   virtual void AddFileDescriptorWatch(PlatformHandle fd, Task callback) = 0;
   virtual void RemoveFileDescriptorWatch(PlatformHandle fd) = 0;
   virtual bool RunsTasksOnCurrentThread() const = 0;
@@ -37,6 +58,29 @@ class TaskRunner {
 ```
 
 This is the core abstraction — all networking, timers, and I/O watches ultimately use a TaskRunner.
+
+### Cancelling a delayed task
+
+```cpp
+auto h = runner.PostDelayedTaskWithHandle([]() {
+  LogI("may not run");
+}, 5000);
+
+if (runner.CancelDelayedTask(h)) {
+  LogI("task cancelled before it ran");
+}
+```
+
+`CancelDelayedTask` returns `true` only if the task was removed before starting; `false` if it already ran, already started running, or the handle is unknown.
+
+### Absolute scheduling
+
+```cpp
+auto deadline = runner.Now() + std::chrono::milliseconds(1500);
+runner.PostTaskAt(deadline, []() {
+  LogI("fires exactly 1500ms from now");
+});
+```
 
 ## UnixTaskRunner — epoll/poll Event Loop
 

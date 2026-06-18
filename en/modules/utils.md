@@ -331,17 +331,114 @@ std::string str = reader.ReadString(5);
 bool ok = reader.HasRemaining(4);  // Check if N bytes available
 ```
 
+## Crypto utilities (crypto.h)
+
+```cpp
+#include "xtils/utils/crypto.h"
+using namespace xtils::crypto;
+```
+
+The backend is the same TLS engine selected via `TLS_BACKEND` (OpenSSL or mbedTLS), so no new dependency is added.
+
+```cpp
+// SHA-256
+std::string Sha256   (std::string_view data);  // 32-byte raw digest
+std::string Sha256Hex(std::string_view data);  // 64-char lowercase hex
+
+// HMAC (key, msg → digest)
+std::string HmacSha1     (std::string_view key, std::string_view msg);
+std::string HmacSha1Hex  (std::string_view key, std::string_view msg);
+std::string HmacSha256   (std::string_view key, std::string_view msg);
+std::string HmacSha256Hex(std::string_view key, std::string_view msg);
+
+// Cryptographically secure random bytes
+bool        SecureRandom   (void* buf, size_t len);   // aborts on RNG failure
+std::string SecureRandomHex(size_t n_bytes);          // returns 2n hex chars
+
+// UUID v4 (RFC 4122 canonical 36-char form: 8-4-4-4-12)
+std::string Uuid::V4();
+```
+
+Example:
+
+```cpp
+auto sig  = HmacSha256Hex(secret, payload);
+auto rand = SecureRandomHex(16);    // 32 hex chars
+auto rid  = Uuid::V4();             // e.g. "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+```
+
+## Result type (result.h)
+
+A type-safe success/error union, inspired by Rust's `Result` and C++23 `std::expected`.
+
+```cpp
+#include "xtils/utils/result.h"
+
+Result<int> Parse(const std::string& s) {
+  int v;
+  if (TryParse(s, v)) return v;
+  return Err("parse failed");
+}
+
+auto r = Parse("123");
+if (r) {                    // operator bool / operator*
+  Use(*r);
+} else {
+  LogE("%s", r.error().message.c_str());
+}
+```
+
+Core API:
+
+```cpp
+// Status
+bool ok()     const;
+bool is_err() const;
+explicit operator bool() const;
+
+// Access (UB if !ok())
+T& value();
+T& operator*();
+T* operator->();
+E& error();
+
+// Get-or-fallback
+T value_or(const T& fallback) const&;
+T unwrap_or_else(F&& f) const&;       // lazy fallback derived from the error
+T& expect(const char* msg) &;         // print + abort on failure (test-only)
+
+// Monadic
+Result<U,E> map     (F f) const;      // T → U
+Result<U,E> and_then(F f) const;      // T → Result<U,E>
+```
+
+Factory helpers:
+
+```cpp
+return Ok(42);
+return Ok();                          // Result<void>
+
+return Err("oops");                   // Error{code=-1, message="oops"}
+return Err(404, "not found");
+return Err(MyCustomError{...});       // custom error type
+```
+
+`is_err()`, `unwrap_or_else()` and `expect()` were added in v2.0.0; the error model is documented in the source repo at `docs/error-model.md`.
+
 ## Other Utilities
 
 | Header | Description |
 |--------|-------------|
 | `xtils/utils/base64.h` | Base64 encode/decode |
-| `xtils/utils/sha1.h` | SHA1 hash (used internally for WebSocket) |
+| `xtils/utils/sha1.h` | SHA-1 hash (kept for legacy protocols; new code should use `crypto.h`) |
 | `xtils/utils/endianness.h` | Byte order detection & conversion macros |
 | `xtils/utils/time_utils.h` | `steady::Now()`, `system::GetCurrentUtcMs()`, `common::TimeDiffMs()` |
-| `xtils/utils/type_traits.h` | Compile-time `type_name<T>()`, `type_name_cstr<T>()` |
+| `xtils/utils/clock.h` | Steady / system clock unified abstraction (test-fakeable) |
+| `xtils/utils/signal.h` | Lightweight signal-slot (`Signal<...>` + `Subscription`) |
+| `xtils/utils/serialize.h` | Simple POD serialisation helpers |
 | `xtils/utils/exception.h` | Exception utilities |
 | `xtils/utils/string_view.h` | `string_view` helpers |
+| `xtils/utils/type_traits.h` | Compile-time `type_name<T>()`, `type_name_cstr<T>()` (printf-safe) |
 
 ### Time Utils Example
 

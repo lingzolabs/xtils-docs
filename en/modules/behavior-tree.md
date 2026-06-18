@@ -245,7 +245,9 @@ class BtTree {
 
 ## Subtrees
 
-Subtrees allow composing complex behaviors from smaller reusable trees:
+Subtrees allow composing complex behaviors from smaller reusable trees. Two flavours:
+
+### 1. Reference a registered tree
 
 ```json
 {
@@ -260,7 +262,23 @@ Subtrees allow composing complex behaviors from smaller reusable trees:
 }
 ```
 
-Each subtree shares the parent's blackboard, enabling data flow between trees.
+The referenced trees must be registered first via `factory.LoadTreeFile(...)` or `factory.LoadTreesFromDirectory(...)`.
+
+### 2. Inline subtree
+
+Embed a tree directly inside a `SubTree` node (no `tree_name` port needed):
+
+```json
+{
+  "type": "SubTree",
+  "tree": {
+    "name": "recovery",
+    "root": { "type": "Inverter", "child": { "type": "CheckBattery" } }
+  }
+}
+```
+
+Every `SubTree` node shares the parent's blackboard and logger, enabling data flow between trees.
 
 ## Event System
 
@@ -286,21 +304,21 @@ tree->sendEvent(EventType::OBSTACLE_DETECTED, AnyData(obstacle_info));
 
 ## BtLogger
 
-Structured logging for offline analysis and live debugging:
+Structured logging for offline analysis and live debugging. The implementations live in three separate headers:
 
 ```cpp
-#include "xtils/fsm/bt_logger.h"
+#include "xtils/fsm/bt_filelogger.h"      // BtFileLogger
+#include "xtils/fsm/bt_inspectlogger.h"   // BtInspectLogger
+#include "xtils/fsm/bt_compositelogger.h" // BtCompositeLogger
+```
 
-// File logger — writes structured log to file
-auto file_logger = std::make_shared<BtFileLogger>("bt_trace.log");
+```cpp
+auto file    = std::make_shared<BtFileLogger>("bt_trace.log");
+auto inspect = std::make_shared<BtInspectLogger>("/debug/bt");
 
-// Inspect logger — sends to debug server via WebSocket
-auto inspect_logger = std::make_shared<BtInspectLogger>("/debug/bt");
-
-// Composite — combine multiple loggers
 auto logger = std::make_shared<BtCompositeLogger>();
-logger->Add(file_logger);
-logger->Add(inspect_logger);
+logger->Add(file);
+logger->Add(inspect);
 
 auto tree = factory.buildFromRegisteredTree("main", blackboard, logger);
 ```

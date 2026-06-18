@@ -128,12 +128,42 @@ class IService {
   virtual void Init() = 0;    // Called after infrastructure is ready
   virtual void Deinit() = 0;  // Called before infrastructure shutdown
 
+  // Names of services this one depends on. App initialises dependencies
+  // first (topological order) and deinitialises them in reverse. Default:
+  // no dependencies.
+  virtual std::vector<std::string> Dependencies() const { return {}; }
+
+  const std::string& Name() const;
+
  protected:
   App* ctx;       // App context (injected by framework)
   Config config;  // Service-specific config section
   std::string name;
 };
 ```
+
+### Service dependencies and topological order
+
+Override `Dependencies()` to declare which services must finish `Init()` before this one:
+
+```cpp
+class ApiService : public Service<ApiService> {
+ public:
+  ApiService() : Service("api") {}
+
+  std::vector<std::string> Dependencies() const override {
+    return {"database", "cache"};
+  }
+
+  void Init() override {
+    // database and cache have already returned from Init()
+  }
+};
+```
+
+- App calls `Init()` in topological order and `Deinit()` in reverse topological order.
+- Cycles or unknown dependency names abort the process loudly so misconfiguration is caught early.
+- `App::TopoSortServices()` is exposed so the dependency graph is unit-testable.
 
 ### `Service<T>` — CRTP helper
 
@@ -227,16 +257,18 @@ class ApiService : public Service<ApiService> {
   ApiService() : Service("api") {}
 
   void Init() override {
-    auto port = config.GetInt("port").value_or(8080);
+    auto port = config.GetOr<int>("port", 8080);
 
     runner_ = ThreadTaskRunner::CreateAndStart("api_io");
     router_ = std::make_unique<HttpRouter>();
 
-    router_->Get("/api/health", [](const HttpRequestContext& ctx, HttpResponse& res) {
+    router_->Get("/api/health",
+        [](const HttpRouter::Context& ctx, HttpRouter::Response& res) {
       res.Status(200).Json("{\"status\":\"ok\"}");
     });
 
-    router_->Post("/api/data", [this](const HttpRequestContext& ctx, HttpResponse& res) {
+    router_->Post("/api/data",
+        [this](const HttpRouter::Context& ctx, HttpRouter::Response& res) {
       auto body = ctx.GetBody();
       LogI("Received: %s", body.c_str());
       res.Status(201).Json("{\"created\":true}");

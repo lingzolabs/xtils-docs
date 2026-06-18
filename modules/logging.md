@@ -97,6 +97,104 @@ trace (0) → debug (1) → info (2) → warn (3) → error (4)
 LogI("连接已建立");
 ```
 
+## 结构化日志（LogBuilder）
+
+除了传统 printf 风格宏，v2.0 起提供链式字段 API，适合加载上下文、交给后端解析。
+
+```cpp
+#include "xtils/logging/log_builder.h"
+
+LOGI().Field("req_id", id)
+      .Field("status", code)
+      .Msg("done");
+
+LOGW().Field("path", path)
+      .Field("latency_ms", latency)
+      .Msg("slow request");
+
+// 也可以是 printf 格式字符串
+LOGE().Field("errno", errno).Msg("open(%s) failed", path.c_str());
+```
+
+输出示例（`PlainFormatter`）：
+
+```
+2026-06-17 10:30:00 I default: done req_id=abc123 status=200
+```
+
+### 可用宏
+
+| 宏 | 等价 |
+|----|------|
+| `LOGI()` | info |
+| `LOGW()` | warn |
+| `LOGE()` | error |
+| `LOGD()` | debug |
+| `LOGT()` | trace（`ENABLE_TRACE_LOGGING` 未定义时可能被编译器优化为 no-op） |
+
+### 终结方法
+
+- `Msg(const std::string& body)` / `Msg()`　 — 发送一条日志
+- `Msg(const char* fmt, ...)`  — printf 风格主体
+- `RenderForTesting()`  — 仅返回拼接后的字段字符串，不发送
+
+若 `LogBuilder` 未调用 `Msg`，析构时会以空主体自动 flush。
+
+## MDC（诊断上下文）
+
+Mapped Diagnostic Context 提供线程局部的键/值上下文，在同一线程上调用任何 `LogBuilder` 时自动拼接。
+
+```cpp
+#include "xtils/logging/mdc.h"
+using xtils::logger::Mdc;
+
+void HandleRequest(const Request& r) {
+  Mdc::Put("req_id", r.id);
+  Mdc::Put("user",   r.user);
+
+  LOGI().Msg("request received");   // 会附带 req_id=... user=...
+  DoWork();
+  LOGI().Msg("request done");
+
+  Mdc::Clear();
+}
+```
+
+### RAII Scope
+
+最常用的是 `Mdc::Scope`，限定上下文生命周期，退出作用域时恢复原值：
+
+```cpp
+void HandleRequest(const Request& r) {
+  Mdc::Scope s1("req_id", r.id);
+  Mdc::Scope s2("user",   r.user);
+
+  LOGI().Msg("request received");
+  DoWork();
+  LOGI().Msg("request done");
+  // 退出作用域时 req_id / user 被恢复为之前的值（或被移除）
+}
+```
+
+### API
+
+```cpp
+class Mdc {
+ public:
+  static void Put  (std::string key, std::string value);
+  static void Erase(const std::string& key);
+  static const std::string& Get(const std::string& key);  // 缺省返回空串
+  static void Clear();
+  static std::vector<std::pair<std::string,std::string>> Snapshot();
+
+  class Scope { Scope(std::string key, std::string value); };
+};
+```
+
+::: tip
+MDC 数据是线程局部的，一个线程设置的上下文不会被另一个线程看到。在 `ThreadTaskRunner` 上跳转任务时，如需携带上下文，需要手动传递。
+:::
+
 ## Logger API
 
 ```cpp

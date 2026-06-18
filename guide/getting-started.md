@@ -2,10 +2,10 @@
 
 ## 环境要求
 
-- **编译器**：GCC 7+、Clang 5+ 或 MSVC 2017+（需要 C++17 支持）
+- **编译器**：GCC 7+ 或 Clang 5+（需要 C++17 支持）
 - **构建系统**：CMake 3.10+
 - **TLS 后端**：OpenSSL 1.1+（默认）或 mbedTLS 2.x/3.x
-- **操作系统**：Linux（主要）、macOS（部分支持）
+- **操作系统**：Linux 仅（官方支持的唯一平台）
 
 ## 安装
 
@@ -38,7 +38,8 @@ cd build && ctest --output-on-failure
 | `BUILD_EXAMPLES` | `OFF` | 构建示例程序 |
 | `BUILD_WITH_SANITIZERS` | `OFF` | 启用 AddressSanitizer + UndefinedBehaviorSanitizer |
 | `TLS_BACKEND` | `openssl` | TLS 实现：`openssl` 或 `mbedtls` |
-| `INSPECT_DISABLE` | `OFF` | 在编译时剥离所有 Inspect 调试服务器代码 |
+| `INSPECT_DISABLE` | `OFF` | 编译时剥离所有 Inspect 调试服务器代码 |
+| `SCRIPTING_ENABLE` | `OFF` | 启用 `xtils/scripting/`（通过 FetchContent 拉取 QuickJS-NG） |
 
 ## 集成方式
 

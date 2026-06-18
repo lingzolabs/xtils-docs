@@ -128,12 +128,41 @@ class IService {
   virtual void Init() = 0;    // 基础设施就绪后调用
   virtual void Deinit() = 0;  // 基础设施关闭前调用
 
+  // 依赖的服务名。App 按拓扑序初始化，逆拓扑序
+  // 反初始化。默认：无依赖。
+  virtual std::vector<std::string> Dependencies() const { return {}; }
+
+  const std::string& Name() const;
+
  protected:
   App* ctx;       // App 上下文（由框架注入）
   Config config;  // 服务专属配置段
   std::string name;
 };
 ```
+
+### 服务依赖与拓扑序
+
+覆写 `Dependencies()` 可以告诉 App 本服务需要哪些其他服务在自己之前 `Init()` 完毕：
+
+```cpp
+class ApiService : public Service<ApiService> {
+ public:
+  ApiService() : Service("api") {}
+
+  std::vector<std::string> Dependencies() const override {
+    return {"database", "cache"};
+  }
+
+  void Init() override {
+    // 到这里时 database 与 cache 已经 Init() 完成
+  }
+};
+```
+
+- App 按拓扑顺序调用 `Init()`，反拓扑顺序调用 `Deinit()`。
+- 依赖环或未知依赖名会直接 abort 进程，便于及早发现配置错误。
+- `App::TopoSortServices()` 作为单测接口公开。
 
 ### `Service<T>` — CRTP 辅助类
 
@@ -232,11 +261,13 @@ class ApiService : public Service<ApiService> {
     runner_ = ThreadTaskRunner::CreateAndStart("api_io");
     router_ = std::make_unique<HttpRouter>();
 
-    router_->Get("/api/health", [](const HttpRequestContext& ctx, HttpResponse& res) {
+    router_->Get("/api/health", [](const HttpRouter::Context& ctx,
+                                    HttpRouter::Response& res) {
       res.Status(200).Json("{\"status\":\"ok\"}");
     });
 
-    router_->Post("/api/data", [this](const HttpRequestContext& ctx, HttpResponse& res) {
+    router_->Post("/api/data", [this](const HttpRouter::Context& ctx,
+                                       HttpRouter::Response& res) {
       auto body = ctx.GetBody();
       LogI("收到: %s", body.c_str());
       res.Status(201).Json("{\"created\":true}");

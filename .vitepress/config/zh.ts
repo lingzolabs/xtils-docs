@@ -27,7 +27,8 @@ export const zh: LocaleSpecificConfig<DefaultTheme.Config> = {
           items: [
             { text: '应用框架', link: '/modules/app' },
             { text: '配置管理', link: '/modules/config' },
-            { text: '日志系统', link: '/modules/logging' }
+            { text: '日志系统', link: '/modules/logging' },
+            { text: '指标', link: '/modules/metrics' }
           ]
         },
         {
@@ -41,6 +42,7 @@ export const zh: LocaleSpecificConfig<DefaultTheme.Config> = {
           text: 'I/O 与并发',
           items: [
             { text: '网络', link: '/modules/networking' },
+            { text: 'IPC 通道', link: '/modules/ipc' },
             { text: '任务调度', link: '/modules/tasks' }
           ]
         },
@@ -48,6 +50,7 @@ export const zh: LocaleSpecificConfig<DefaultTheme.Config> = {
           text: '工具库',
           items: [
             { text: '系统', link: '/modules/system' },
+            { text: '脚本（QuickJS）', link: '/modules/scripting' },
             { text: '通用工具', link: '/modules/utils' },
             { text: '调试工具', link: '/modules/debug' }
           ]

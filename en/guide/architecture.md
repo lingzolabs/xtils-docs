@@ -18,30 +18,29 @@ xtils modules are layered. Lower-level modules have no upward dependencies:
 xtils/
 ├── include/xtils/              # Public headers (your #include path)
 │   ├── app/                    # app.h, service.h, auto-gen.h
-│   ├── config/                 # config.h
+│   ├── config/                 # config.h, config_watcher.h
 │   ├── debug/                  # inspect.h, tracer.h
-│   ├── fsm/                    # fsm.h, fsm_compat.h, behavior_tree.h, bt_*logger.h
-│   ├── logging/                # logger.h, sink.h, watchdog.h
+│   ├── fsm/                    # fsm.h, behavior_tree.h, bt_*logger.h
+│   ├── logging/                # logger.h, sink.h, mdc.h, log_builder.h, watchdog.h
+│   ├── metrics/                # metrics.h (Counter/Gauge/Histogram + Prometheus)
 │   ├── net/                    # Networking
-│   │   ├── transport/          # transport.h, tls_transport.h, mbedtls_transport.h,
-│   │   │                       # tls_factory.h, plain_tcp_transport.h
-│   │   ├── http_client.h
-│   │   ├── http_server.h
-│   │   ├── http_router.h       # Express-style routing
+│   │   ├── transport/          # transport.h, tls_transport.h, tls_factory.h, ...
+│   │   ├── http_client.h / http_server.h / http_router.h
+│   │   ├── http_client_pool.h  # HttpClientPool
 │   │   ├── http_multipart.h    # multipart/form-data parser
-│   │   ├── http_common.h
+│   │   ├── ipc_channel.h       # JSON-RPC 2.0 IPC
 │   │   ├── tcp_client.h / tcp_server.h
 │   │   ├── udp_client.h / udp_server.h
-│   │   ├── websocket_client.h
-│   │   └── websocket_common.h
+│   │   └── websocket_client.h / websocket_common.h
+│   ├── scripting/              # Optional QuickJS-NG embedding
 │   ├── system/                 # OS abstractions
 │   ├── tasks/                  # Async & scheduling
-│   └── utils/                  # General utilities
+│   └── utils/                  # General utilities (json/crypto/result/...)
 ├── src/                        # Implementation (.cc files)
 ├── tests/                      # Unit tests (doctest)
 ├── examples/                   # Built-in examples
 ├── cmake/                      # CMake helpers
-└── docs/                       # AI-friendly documentation
+└── docs/                       # Source documentation
 ```
 
 ## Event Loop Architecture
@@ -139,6 +138,9 @@ Both backends implement the same `Transport` interface. Selection is compile-tim
 | `USE_OPENSSL` | `TLS_BACKEND=openssl` |
 | `USE_MBEDTLS` | `TLS_BACKEND=mbedtls` |
 | `INSPECT_DISABLE` | `INSPECT_DISABLE=ON` |
+| `XTILS_HAS_SCRIPTING` | `SCRIPTING_ENABLE=ON` |
+| `ENABLE_TRACE_RECORDING` | defined to enable Tracer macros |
+| `ENABLE_TRACE_LOGGING` | defined to enable `LogT()` / trace level |
 
 ### Exported CMake Targets
 

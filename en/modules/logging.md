@@ -36,20 +36,40 @@ LogE(fmt, ...)   // Error
 ### Custom Logger Instance
 
 ```cpp
-TRACE(logger, fmt, ...)
-DEBUG(logger, fmt, ...)
-INFO(logger, fmt, ...)
-WARN(logger, fmt, ...)
-ERROR(logger, fmt, ...)
+auto* logger = xtils::logger::DefaultLogger();
+
+XTILS_LOG_T(logger, fmt, ...)
+XTILS_LOG_D(logger, fmt, ...)
+XTILS_LOG_I(logger, fmt, ...)
+XTILS_LOG_W(logger, fmt, ...)
+XTILS_LOG_E(logger, fmt, ...)
 ```
 
-### Assertions
+### Opt-in short macros
+
+If you prefer `TRACE` / `DEBUG` / `INFO` / `WARN` / `ERROR`, define before including:
 
 ```cpp
-CHECK(expr)       // Assert + abort with message
-DCHECK(expr)      // Debug-only assert (compiled out in Release)
-FATAL(fmt, ...)   // Log error + abort
+#define XTILS_LOG_SHORT_MACROS
+#include <xtils/logging/logger.h>
+
+INFO(logger, "info message");
+DEBUG(logger, "debug message");
 ```
+
+::: warning
+Short macros may collide with other libraries (e.g. Windows `ERROR`). Disabled by default.
+:::
+
+### Assertions and Fatal
+
+```cpp
+XTILS_CHECK(expr)       // assert + abort if false
+XTILS_DCHECK(expr)      // debug-only assert (still active in release if compiled)
+XTILS_FATAL(fmt, ...)   // log error + abort
+```
+
+With `XTILS_LOG_SHORT_MACROS` defined the short forms `CHECK`/`DCHECK`/`FATAL` are also available.
 
 ## Log Levels
 
@@ -73,6 +93,104 @@ LogI("Connection established");
 ```
 
 If `LOG_TAG_STRING` is not defined, the tag defaults to the filename.
+
+## Structured logging (LogBuilder)
+
+In addition to printf-style macros, v2.0 ships a chained-field API ideal for adding rich context that downstream tooling can parse.
+
+```cpp
+#include "xtils/logging/log_builder.h"
+
+LOGI().Field("req_id", id)
+      .Field("status", code)
+      .Msg("done");
+
+LOGW().Field("path", path)
+      .Field("latency_ms", latency)
+      .Msg("slow request");
+
+// printf-style body still works
+LOGE().Field("errno", errno).Msg("open(%s) failed", path.c_str());
+```
+
+Example output (`PlainFormatter`):
+
+```
+2026-06-17 10:30:00 I default: done req_id=abc123 status=200
+```
+
+### Macros
+
+| Macro | Level |
+|-------|-------|
+| `LOGI()` | info |
+| `LOGW()` | warn |
+| `LOGE()` | error |
+| `LOGD()` | debug |
+| `LOGT()` | trace (a no-op when `ENABLE_TRACE_LOGGING` is not defined) |
+
+### Terminal methods
+
+- `Msg(const std::string& body)` / `Msg()` — dispatch one log entry
+- `Msg(const char* fmt, ...)` — printf-style body
+- `RenderForTesting()` — returns the rendered fields without dispatching (tests only)
+
+If `Msg(...)` is never called, the destructor flushes with an empty body so a forgotten `.Msg()` does not silently swallow the entry.
+
+## MDC (Mapped Diagnostic Context)
+
+MDC is thread-local key/value context that automatically attaches to any `LogBuilder` call on the same thread.
+
+```cpp
+#include "xtils/logging/mdc.h"
+using xtils::logger::Mdc;
+
+void HandleRequest(const Request& r) {
+  Mdc::Put("req_id", r.id);
+  Mdc::Put("user",   r.user);
+
+  LOGI().Msg("request received");   // appends req_id=... user=...
+  DoWork();
+  LOGI().Msg("request done");
+
+  Mdc::Clear();
+}
+```
+
+### RAII Scope
+
+The usual pattern is `Mdc::Scope`, which restores the previous value (or removes the key) on destruction:
+
+```cpp
+void HandleRequest(const Request& r) {
+  Mdc::Scope s1("req_id", r.id);
+  Mdc::Scope s2("user",   r.user);
+
+  LOGI().Msg("request received");
+  DoWork();
+  LOGI().Msg("request done");
+  // req_id / user reset here.
+}
+```
+
+### API
+
+```cpp
+class Mdc {
+ public:
+  static void Put  (std::string key, std::string value);
+  static void Erase(const std::string& key);
+  static const std::string& Get(const std::string& key);  // empty string if absent
+  static void Clear();
+  static std::vector<std::pair<std::string,std::string>> Snapshot();
+
+  class Scope { Scope(std::string key, std::string value); };
+};
+```
+
+::: tip
+MDC is thread-local. When jumping tasks across `ThreadTaskRunner` boundaries you must propagate context manually if you want it to ride along.
+:::
 
 ## Logger API
 

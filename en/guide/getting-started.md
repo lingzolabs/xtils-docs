@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-- **Compiler**: GCC 7+, Clang 5+, or MSVC 2017+ (C++17 support required)
+- **Compiler**: GCC 7+ or Clang 5+ (C++17 support required)
 - **Build system**: CMake 3.10+
 - **TLS backend**: OpenSSL 1.1+ (default) or mbedTLS 2.x/3.x
-- **OS**: Linux (primary), macOS (partial)
+- **OS**: Linux only (the only officially supported platform)
 
 ## Installation
 
@@ -39,6 +39,7 @@ cd build && ctest --output-on-failure
 | `BUILD_WITH_SANITIZERS` | `OFF` | Enable AddressSanitizer + UndefinedBehaviorSanitizer |
 | `TLS_BACKEND` | `openssl` | TLS implementation: `openssl` or `mbedtls` |
 | `INSPECT_DISABLE` | `OFF` | Strip all Inspect debug server code at compile time |
+| `SCRIPTING_ENABLE` | `OFF` | Enable `xtils/scripting/` (QuickJS-NG fetched via FetchContent) |
 
 ## Integration
 

@@ -236,12 +236,110 @@ uint16_t val = reader.ReadUInt16BE();
 std::string str = reader.ReadString(5);
 ```
 
+## 加密工具（crypto.h）
+
+```cpp
+#include "xtils/utils/crypto.h"
+using namespace xtils::crypto;
+```
+
+后端复用所选 TLS 引擎（OpenSSL 或 mbedTLS），不引入新依赖。
+
+```cpp
+// SHA-256
+std::string Sha256   (std::string_view data);  // 32 字节原始摘要
+std::string Sha256Hex(std::string_view data);  // 64 字符小写十六进制
+
+// HMAC（key, msg → digest）
+std::string HmacSha1     (std::string_view key, std::string_view msg);
+std::string HmacSha1Hex  (std::string_view key, std::string_view msg);
+std::string HmacSha256   (std::string_view key, std::string_view msg);
+std::string HmacSha256Hex(std::string_view key, std::string_view msg);
+
+// 安全随机
+bool        SecureRandom   (void* buf, size_t len);   // 失败会 abort
+std::string SecureRandomHex(size_t n_bytes);          // 2*n 字符 hex
+
+// UUID v4（RFC 4122 规范化 36 字符串：8-4-4-4-12）
+std::string Uuid::V4();
+```
+
+示例：
+
+```cpp
+auto sig  = HmacSha256Hex(secret, payload);
+auto rand = SecureRandomHex(16);    // 32 个 hex 字符的随机串
+auto rid  = Uuid::V4();             // 例如 "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+```
+
+## Result 类型（result.h）
+
+类型安全的成功/错误并集，灵感来自 Rust `Result` 与 C++23 `std::expected`。
+
+```cpp
+#include "xtils/utils/result.h"
+
+Result<int> Parse(const std::string& s) {
+  int v;
+  if (TryParse(s, v)) return v;
+  return Err("parse failed");
+}
+
+auto r = Parse("123");
+if (r) {                    // 显式 bool / operator*
+  Use(*r);
+} else {
+  LogE("%s", r.error().message.c_str());
+}
+```
+
+核心 API：
+
+```cpp
+// 状态
+bool ok()     const;
+bool is_err() const;
+explicit operator bool() const;
+
+// 取值（!ok() 时未定义）
+T& value();
+T& operator*();
+T* operator->();
+E& error();
+
+// 取值或回退
+T value_or(const T& fallback) const&;
+T unwrap_or_else(F&& f) const&;       // 通过错误懒计算回退
+T& expect(const char* msg) &;         // 失败则打印并 abort（测试断言用）
+
+// 单子组合
+Result<U,E> map     (F f) const;      // T → U
+Result<U,E> and_then(F f) const;      // T → Result<U,E>
+```
+
+构造助手：
+
+```cpp
+Return Ok(42);
+Return Ok();                          // Result<void>
+
+return Err("oops");                   // Error{code=-1, message="oops"}
+return Err(404, "not found");
+return Err(MyCustomError{...});       // 自定义错误类型
+```
+
+v2.0 起新增 `is_err()`、`unwrap_or_else()`、`expect()`，并补充错误模型说明（见仓库 `docs/error-model.md`）。
+
 ## 其他工具
 
 | 头文件 | 描述 |
 |--------|------|
 | `xtils/utils/base64.h` | Base64 编码/解码 |
-| `xtils/utils/sha1.h` | SHA1 哈希 |
+| `xtils/utils/sha1.h` | SHA-1 哈希（保留供旧协议使用；新代码请用 `crypto.h`） |
 | `xtils/utils/endianness.h` | 字节序检测与转换 |
 | `xtils/utils/time_utils.h` | `steady::Now()`、`system::GetCurrentUtcMs()` |
-| `xtils/utils/type_traits.h` | 编译时 `type_name<T>()` |
+| `xtils/utils/clock.h` | 系统/单调时钟统一接口（便于测试 fake） |
+| `xtils/utils/signal.h` | 轻量信号-槽（`Signal<...>` + `Subscription`） |
+| `xtils/utils/serialize.h` | 简易 POD 序列化助手 |
+| `xtils/utils/exception.h` | 统一异常基类 |
+| `xtils/utils/type_traits.h` | 编译期 `type_name<T>()` / `type_name_cstr<T>()`（printf 安全） |

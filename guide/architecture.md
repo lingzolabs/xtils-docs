@@ -18,21 +18,24 @@ xtils 的模块按层次组织，底层模块没有向上的依赖：
 xtils/
 ├── include/xtils/              # 公共头文件（#include 路径）
 │   ├── app/                    # app.h, service.h, auto-gen.h
-│   ├── config/                 # config.h
+│   ├── config/                 # config.h, config_watcher.h
 │   ├── debug/                  # inspect.h, tracer.h
-│   ├── fsm/                    # fsm.h, fsm_compat.h, behavior_tree.h
-│   ├── logging/                # logger.h, sink.h, watchdog.h
+│   ├── fsm/                    # fsm.h, behavior_tree.h, bt_*logger.h
+│   ├── logging/                # logger.h, sink.h, mdc.h, log_builder.h, watchdog.h
+│   ├── metrics/                # metrics.h（Counter/Gauge/Histogram + Prometheus）
 │   ├── net/                    # 网络模块
 │   │   ├── transport/          # transport.h, tls_transport.h, tls_factory.h
-│   │   ├── http_client.h / http_server.h
-│   │   ├── http_router.h      # Express 风格路由
-│   │   ├── http_multipart.h   # multipart/form-data 解析器
+│   │   ├── http_client.h / http_server.h / http_router.h
+│   │   ├── http_client_pool.h  # HttpClientPool
+│   │   ├── http_multipart.h    # multipart/form-data 解析器
+│   │   ├── ipc_channel.h       # JSON-RPC 2.0 进程间通信
 │   │   ├── tcp_client.h / tcp_server.h
 │   │   ├── udp_client.h / udp_server.h
-│   │   └── websocket_client.h
+│   │   └── websocket_client.h / websocket_common.h
+│   ├── scripting/              # 可选：QuickJS-NG 脚本引擎
 │   ├── system/                 # 操作系统抽象
 │   ├── tasks/                  # 异步与调度
-│   └── utils/                  # 通用工具
+│   └── utils/                  # 通用工具（json/crypto/result/...）
 ├── src/                        # 实现文件（.cc）
 ├── tests/                      # 单元测试（doctest）
 ├── examples/                   # 内置示例
@@ -135,6 +138,9 @@ xtils 使用**单主线程 + 工作池**模型：
 | `USE_OPENSSL` | `TLS_BACKEND=openssl` |
 | `USE_MBEDTLS` | `TLS_BACKEND=mbedtls` |
 | `INSPECT_DISABLE` | `INSPECT_DISABLE=ON` |
+| `XTILS_HAS_SCRIPTING` | `SCRIPTING_ENABLE=ON` |
+| `ENABLE_TRACE_RECORDING` | 定义后启用 Tracer 宏 |
+| `ENABLE_TRACE_LOGGING` | 定义后启用 `LogT()` / trace 级别日志 |
 
 ### 导出的 CMake 目标
 

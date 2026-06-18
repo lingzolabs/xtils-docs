@@ -50,15 +50,18 @@ xtils 以 C++17 为目标，在最大化兼容性的同时利用现代特性：
 
 | 模块 | 头文件前缀 | 功能 |
 |------|-----------|------|
-| [App](/modules/app) | `xtils/app/` | 应用生命周期、服务注册、事件、定时器 |
-| [Config](/modules/config) | `xtils/config/` | JSON 配置、CLI 解析、点分路径访问 |
+| [App](/modules/app) | `xtils/app/` | 应用生命周期、服务注册与拓扑顺序、事件、定时器 |
+| [Config](/modules/config) | `xtils/config/` | JSON 配置、CLI/环境变量、热加载 |
 | [FSM](/modules/fsm) | `xtils/fsm/` | 有限状态机、守卫条件、历史记录、Graphviz 导出 |
-| [行为树](/modules/behavior-tree) | `xtils/fsm/` | JSON 驱动的行为树、黑板、端口、子树 |
-| [日志](/modules/logging) | `xtils/logging/` | 异步日志器、滚动文件、系统看门狗 |
-| [网络](/modules/networking) | `xtils/net/` | TCP/UDP、HTTP、WebSocket、TLS、路由 |
-| [任务](/modules/tasks) | `xtils/tasks/` | 事件循环、线程池、任务组、定时器、Cron 调度 |
-| [系统](/modules/system) | `xtils/system/` | 信号处理、页面内存、EventFd、Unix Socket、平台抽象 |
-| [工具](/modules/utils) | `xtils/utils/` | JSON、字符串、文件 I/O、Base64、字节读写、RAII |
+| [行为树](/modules/behavior-tree) | `xtils/fsm/` | JSON 驱动的行为树、黑板、端口、子树、事件 |
+| [日志](/modules/logging) | `xtils/logging/` | 异步日志、滚动文件、看门狗、MDC 与 LogBuilder |
+| [指标](/modules/metrics) | `xtils/metrics/` | Counter/Gauge/Histogram、Prometheus 导出 |
+| [网络](/modules/networking) | `xtils/net/` | TCP/UDP、HTTP、HttpClientPool、WebSocket、TLS、路由 |
+| [IPC](/modules/ipc) | `xtils/net/` | JSON-RPC 2.0 进程间通信 |
+| [任务](/modules/tasks) | `xtils/tasks/` | 事件循环、线程池、TaskGroup、定时器、Cron |
+| [脚本](/modules/scripting) | `xtils/scripting/` | 嵌入 QuickJS-NG，与 Json 互转（可选） |
+| [系统](/modules/system) | `xtils/system/` | 信号处理、页内存、EventFd、Unix Socket、平台抽象 |
+| [工具](/modules/utils) | `xtils/utils/` | JSON、crypto、Result、字符串、文件 I/O、RAII |
 | [调试](/modules/debug) | `xtils/debug/` | HTTP/WS 调试服务器、Chrome 追踪格式分析器 |
 
 ## 快速示例

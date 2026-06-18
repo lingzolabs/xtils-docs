@@ -2,32 +2,32 @@
 layout: home
 hero:
   name: xtils
-  text: C++17 Static Utility Library
-  tagline: App framework, networking, FSM, behavior trees, async tasks, and more.
+  text: Practical-first C++17 utility library
+  tagline: Bring the developer experience of Go/Python/Rust standard libraries to C++ — without giving up the performance.
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /en/guide/getting-started
     - theme: alt
       text: View on GitHub
       link: https://github.com/lingzolabs/xtils
 features:
   - icon: 🏗️
     title: App Framework
-    details: Singleton app context with service lifecycle, config, events, and timers.
+    details: Service lifecycle with topological dependencies, config injection, event system — a ready-to-go application skeleton.
   - icon: 🌐
     title: Networking
-    details: TCP/UDP, HTTP client & server, WebSocket, TLS (OpenSSL / mbedTLS).
+    details: TCP/UDP, HTTP (Express-style router, HttpClientPool), WebSocket, TLS, JSON-RPC IPC — start a server in one line.
   - icon: 🤖
     title: FSM & Behavior Tree
-    details: Finite state machines with guards and Graphviz export. JSON-driven behavior trees with blackboard and events.
+    details: State machine with history + JSON-driven behavior tree (events, subtrees, blackboard) — no template hell.
   - icon: ⚡
     title: Async Tasks
-    details: Event loop, thread pools, task groups, timers, cron scheduler.
+    details: Event loop, thread pools, cron scheduler, cancellable timers — manage concurrency as easily as Go routines.
   - icon: 📝
-    title: Logging
-    details: Async logger with console & rotating file sinks, watchdog.
+    title: Logging & Metrics
+    details: Async / rotating / leveled logging with structured `LogBuilder` + MDC. Counter / Gauge / Histogram with Prometheus exporter.
   - icon: 🔧
     title: Utilities
-    details: JSON, string/file utils, base64, SHA1, byte reader/writer, thread-safe containers.
+    details: JSON, crypto (SHA-256/HMAC/UUID), Result, strings, file I/O, byte reader/writer — no need to pull in third-party libs.
 ---
