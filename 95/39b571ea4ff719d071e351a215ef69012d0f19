@@ -1,0 +1,82 @@
+en/changelog.md
+  s_96296738bd11cf::t_26a0ad822ad2d3 7-157
+.vitepress/config/zh.ts
+  s_96296738bd11cf::t_78f9c97080ce96 30-31,45,53
+en/modules/metrics.md
+  s_96296738bd11cf::t_7f576f34690388 1-225
+guide/getting-started.md
+  s_96296738bd11cf::t_127b9e0bf5682a 5,8,41-42
+modules/ipc.md
+  s_96296738bd11cf::t_465dd0dda4947c 1-234
+modules/logging.md
+  s_96296738bd11cf::t_cc269c3065f856 100-197
+en/guide/getting-started.md
+  s_96296738bd11cf::t_7ea4870cfb51e6 5,8,42
+modules/metrics.md
+  s_96296738bd11cf::t_f5ae4e67c694c3 1-229
+en/modules/behavior-tree.md
+  s_96296738bd11cf::t_76f2d6176a5a4c 248-250,265-281,307,310-313,315-317,320-321
+modules/utils.md
+  s_96296738bd11cf::t_64c6d12aa42808 239-332,338,341-345
+guide/introduction.md
+  s_96296738bd11cf::t_1d155db4ff2376 53-54,56-64
+en/modules/config.md
+  s_96296738bd11cf::t_b0a5b3233805de 68-70,77-103,173-196
+index.md
+  s_96296738bd11cf::t_61e28df74030b1 17,20,23,26,28-29,32
+en/modules/tasks.md
+  s_96296738bd11cf::t_a9651a97d33561 31-34,37-53,62-83
+modules/scripting.md
+  s_96296738bd11cf::t_db2f0870b88da2 1-254
+guide/architecture.md
+  s_96296738bd11cf::t_405c4f91cb4ba1 141-143
+  s_96296738bd11cf::t_1faf8aae934f97 21,23-25,28-31,34-35,38
+en/guide/architecture.md
+  s_96296738bd11cf::t_9098e3e4a33648 21,23-25,27-29,31,34-35,38,43,141-143
+en/modules/app.md
+  s_96296738bd11cf::t_38038318f41c8f 131-137,145-167,260,265-266,270-271
+en/guide/introduction.md
+  s_96296738bd11cf::t_b2522ca6f1d344 41-42,44-48,50,52
+en/modules/utils.md
+  s_96296738bd11cf::t_3e5c590633a2f5 334-427,433,436-438,441
+en/modules/scripting.md
+  s_96296738bd11cf::t_819e5caf78b3f6 1-249
+modules/networking.md
+  s_96296738bd11cf::t_6a3a5c3bec4d94 3,17-18,26-31,117-139,146,149-176,178,186-188,191-195,197,202-210,215,221-222,238,269-271,273,279,283,286,288-289,291-294,298,301-312,320-322,324,339,344-349,370-373,381-382,386,391
+modules/app.md
+  s_96296738bd11cf::t_fc546d6d3f4e09 131-136,144-166,264-265,269-270
+en/index.md
+  s_96296738bd11cf::t_f6a00880360ccc 5-6,10,17,20,23,26,28-29,32
+modules/behavior-tree.md
+  s_96296738bd11cf::t_fbfd165d4f214e 173-174,177,186-188,195-197,212-228,232,235-238,240-242,245-246
+changelog.md
+  s_96296738bd11cf::t_93dd388c1e8e4b 7,9,11,13-21,23,25,27-30,32,34-43,45-54,56,58-61,63,65-67,69,71-73,75,77-78,80,82-85,87,89-92,94,96-100,102,104-111,117
+modules/tasks.md
+  s_96296738bd11cf::t_369b909dfadecd 17-21,24-38,45-66
+en/modules/ipc.md
+  s_96296738bd11cf::t_72d35438e1c25f 1-229
+en/modules/networking.md
+  s_96296738bd11cf::t_730618e51d5fcc 3,17-18,26-31,46,75,95,101-106,108-112,122-144,146-151,154-156,158,161,163-164,166-168,170-177,180,182,189-191,193,195-200,202,204-205,210-218,222,224,227-229,231,237,241,244,255,258,260-261,263-264,270-271,275-277,279,282,284-286,289-300,303-305,307,309-312,315-317,320-324,326,328,334,341,344,346,348,350,352,370-373,378,381-383,386,391,397-398
+modules/config.md
+  s_96296738bd11cf::t_54bdfeae5b34bd 55-60,67-95,164-186
+.vitepress/config/en.ts
+  s_96296738bd11cf::t_06f68c2ed575ec 30-31,45,53
+en/modules/logging.md
+  s_96296738bd11cf::t_fe2dcbebec3893 39-57,60-64,67-69,72-73,97-193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "9539b571ea4ff719d071e351a215ef69012d0f19",
+  "prompts": {},
+  "sessions": {
+    "s_96296738bd11cf": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ed4fc-cd4f-7b5e-be7e-0586b911195d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Albert Lv <altair.albert@gmail.com>"
+    }
+  }
+}
