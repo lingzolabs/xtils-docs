@@ -1,0 +1,20 @@
+package.json
+  s_96296738bd11cf::t_432d4804b00e72 15
+  s_96296738bd11cf::t_b02294d4a2b120 13-14,16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "3226101c807ac13eaca5e3cdfd7d663793a966d3",
+  "prompts": {},
+  "sessions": {
+    "s_96296738bd11cf": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ed4fc-cd4f-7b5e-be7e-0586b911195d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Albert Lv <altair.albert@gmail.com>"
+    }
+  }
+}
